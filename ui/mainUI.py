@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(997, 627)
+        MainWindow.resize(1000, 700)
         font = QtGui.QFont()
         font.setFamily("Segoe UI")
         font.setPointSize(12)
@@ -39,7 +39,7 @@ class Ui_MainWindow(object):
 "    border: 1px solid #6B7280;\n"
 "    color: #1F2937;\n"
 "    font-weight: normal;\n"
-"    padding: 6px 16px;\n"
+"    padding: 6px 8px;\n"
 "}\n"
 "\n"
 "QPushButton:hover {\n"
@@ -61,7 +61,6 @@ class Ui_MainWindow(object):
 "    background-color: white;\n"
 "    border-radius: 6px;\n"
 "    border: 1px solid #CAD1E0;\n"
-"    font-size: 12px;\n"
 "    color: #1F2937;\n"
 "    padding: 4px 8px;\n"
 "}\n"
@@ -73,6 +72,32 @@ class Ui_MainWindow(object):
 "QLineEdit:disabled {\n"
 "    border: 1px solid #F5F8FF;\n"
 "    color: #D3DEF5;\n"
+"}\n"
+"\n"
+"QSpinBox {\n"
+"    background-color: white;\n"
+"    border-radius: 6px;\n"
+"    border: 1px solid #CAD1E0;\n"
+"    padding: 4px 8px;\n"
+"    color: #1F2937;\n"
+"    selection-background-color: #2563EB;\n"
+"}\n"
+"\n"
+"QSpinBox:focus {\n"
+"    border: 1px solid #2563EB;\n"
+"}\n"
+"\n"
+"QSpinBox:disabled {\n"
+"    border: 1px solid #E9EFFB;\n"
+"    background-color: #F8FAFC;\n"
+"    color: #9CA3AF;\n"
+"}\n"
+"\n"
+"QSpinBox::up-button, QSpinBox::down-button {\n"
+"    width: 0px;\n"
+"    height: 0px;\n"
+"    border: none;\n"
+"    background: transparent;\n"
 "}\n"
 "\n"
 "QProgressBar {\n"
@@ -133,13 +158,17 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addWidget(self.search_line_label)
         self.search_line_lineEdit = QtWidgets.QLineEdit(self.search_line_frame)
         self.search_line_lineEdit.setEnabled(True)
-        self.search_line_lineEdit.setMinimumSize(QtCore.QSize(0, 24))
+        self.search_line_lineEdit.setMinimumSize(QtCore.QSize(0, 0))
         self.search_line_lineEdit.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        font = QtGui.QFont()
+        font.setFamily("Segoe UI")
+        font.setPointSize(12)
+        self.search_line_lineEdit.setFont(font)
         self.search_line_lineEdit.setObjectName("search_line_lineEdit")
         self.horizontalLayout.addWidget(self.search_line_lineEdit)
         self.search_line_clear_pushButton = QtWidgets.QPushButton(self.search_line_frame)
         self.search_line_clear_pushButton.setEnabled(False)
-        self.search_line_clear_pushButton.setMinimumSize(QtCore.QSize(100, 24))
+        self.search_line_clear_pushButton.setMinimumSize(QtCore.QSize(100, 0))
         self.search_line_clear_pushButton.setMaximumSize(QtCore.QSize(100, 16777215))
         font = QtGui.QFont()
         font.setPointSize(12)
@@ -176,16 +205,29 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.setSpacing(8)
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.norms_calculations_lalabel = QtWidgets.QLabel(self.norms_calculations_frame)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.norms_calculations_lalabel.sizePolicy().hasHeightForWidth())
+        self.norms_calculations_lalabel.setSizePolicy(sizePolicy)
         font = QtGui.QFont()
         font.setPointSize(12)
         self.norms_calculations_lalabel.setFont(font)
         self.norms_calculations_lalabel.setObjectName("norms_calculations_lalabel")
         self.horizontalLayout_2.addWidget(self.norms_calculations_lalabel)
-        self.norms_calculations_lineEdit = QtWidgets.QLineEdit(self.norms_calculations_frame)
-        self.norms_calculations_lineEdit.setMinimumSize(QtCore.QSize(0, 24))
-        self.norms_calculations_lineEdit.setMaximumSize(QtCore.QSize(16777215, 16777215))
-        self.norms_calculations_lineEdit.setObjectName("norms_calculations_lineEdit")
-        self.horizontalLayout_2.addWidget(self.norms_calculations_lineEdit)
+        self.norms_calculations_spinBox = QtWidgets.QSpinBox(self.norms_calculations_frame)
+        self.norms_calculations_spinBox.setMinimumSize(QtCore.QSize(100, 0))
+        self.norms_calculations_spinBox.setMaximumSize(QtCore.QSize(100, 16777215))
+        font = QtGui.QFont()
+        font.setFamily("Segoe UI")
+        font.setPointSize(12)
+        self.norms_calculations_spinBox.setFont(font)
+        self.norms_calculations_spinBox.setMaximum(999999)
+        self.norms_calculations_spinBox.setProperty("value", 100)
+        self.norms_calculations_spinBox.setObjectName("norms_calculations_spinBox")
+        self.horizontalLayout_2.addWidget(self.norms_calculations_spinBox)
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_2.addItem(spacerItem)
         self.verticalLayout_6.addWidget(self.norms_calculations_frame)
         self.data_tableWidget = QtWidgets.QTableWidget(self.centralwidget)
         self.data_tableWidget.setMinimumSize(QtCore.QSize(0, 200))
@@ -257,8 +299,8 @@ class Ui_MainWindow(object):
         self.export_formats_pdf_radioButton.setFont(font)
         self.export_formats_pdf_radioButton.setObjectName("export_formats_pdf_radioButton")
         self.horizontalLayout_3.addWidget(self.export_formats_pdf_radioButton)
-        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_3.addItem(spacerItem)
+        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_3.addItem(spacerItem1)
         self.verticalLayout_2.addWidget(self.export_formats_frame)
         self.verticalLayout_4.addWidget(self.choose_export_format_frame)
         self.save_file_path_frame = QtWidgets.QFrame(self.export_frame)
@@ -289,14 +331,19 @@ class Ui_MainWindow(object):
         self.horizontalLayout_4.setSpacing(8)
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
         self.save_file_path_line_lineEdit = QtWidgets.QLineEdit(self.save_file_path_line_frame)
-        self.save_file_path_line_lineEdit.setMinimumSize(QtCore.QSize(0, 24))
+        self.save_file_path_line_lineEdit.setMinimumSize(QtCore.QSize(0, 0))
         self.save_file_path_line_lineEdit.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        font = QtGui.QFont()
+        font.setFamily("Segoe UI")
+        font.setPointSize(12)
+        self.save_file_path_line_lineEdit.setFont(font)
         self.save_file_path_line_lineEdit.setObjectName("save_file_path_line_lineEdit")
         self.horizontalLayout_4.addWidget(self.save_file_path_line_lineEdit)
         self.save_file_path_line_choose_pushButton = QtWidgets.QPushButton(self.save_file_path_line_frame)
-        self.save_file_path_line_choose_pushButton.setMinimumSize(QtCore.QSize(100, 24))
+        self.save_file_path_line_choose_pushButton.setMinimumSize(QtCore.QSize(100, 0))
         self.save_file_path_line_choose_pushButton.setMaximumSize(QtCore.QSize(100, 16777215))
         font = QtGui.QFont()
+        font.setFamily("Segoe UI")
         font.setPointSize(12)
         self.save_file_path_line_choose_pushButton.setFont(font)
         self.save_file_path_line_choose_pushButton.setObjectName("save_file_path_line_choose_pushButton")
@@ -304,7 +351,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addWidget(self.save_file_path_line_frame)
         self.verticalLayout_4.addWidget(self.save_file_path_frame)
         self.export_pushButton = QtWidgets.QPushButton(self.export_frame)
-        self.export_pushButton.setEnabled(True)
+        self.export_pushButton.setEnabled(False)
         self.export_pushButton.setMinimumSize(QtCore.QSize(0, 24))
         self.export_pushButton.setMaximumSize(QtCore.QSize(16777215, 16777215))
         font = QtGui.QFont()
@@ -368,8 +415,8 @@ class Ui_MainWindow(object):
         self.progress_bar_labels_process_label.setFont(font)
         self.progress_bar_labels_process_label.setObjectName("progress_bar_labels_process_label")
         self.horizontalLayout_5.addWidget(self.progress_bar_labels_process_label)
-        spacerItem1 = QtWidgets.QSpacerItem(882, 12, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_5.addItem(spacerItem1)
+        spacerItem2 = QtWidgets.QSpacerItem(882, 12, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_5.addItem(spacerItem2)
         self.progress_bar_labels_percents_label = QtWidgets.QLabel(self.progress_bar_labels_frame)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -403,12 +450,12 @@ class Ui_MainWindow(object):
         self.search_line_clear_pushButton.setText(_translate("MainWindow", "Очистить"))
         self.search_checkBox.setText(_translate("MainWindow", "Поиск по материалам"))
         self.norms_calculations_lalabel.setText(_translate("MainWindow", "Нормы на количество:"))
-        self.norms_calculations_lineEdit.setPlaceholderText(_translate("MainWindow", "100"))
         self.choose_export_format_label.setText(_translate("MainWindow", "Выберите формат экспорта:"))
         self.export_formats_excel_radioButton.setText(_translate("MainWindow", "Excel (.xlsx)"))
         self.export_formats_word_radioButton.setText(_translate("MainWindow", "Word (.docx)"))
         self.export_formats_pdf_radioButton.setText(_translate("MainWindow", "PDF (.pdf)"))
         self.label.setText(_translate("MainWindow", "Выберите папку для сохранения:"))
+        self.save_file_path_line_lineEdit.setPlaceholderText(_translate("MainWindow", "По умолчанию файл сохраняется на рабочий стол"))
         self.save_file_path_line_choose_pushButton.setText(_translate("MainWindow", "Выбрать"))
         self.export_pushButton.setText(_translate("MainWindow", "Экспортировать"))
         self.progress_bar_labels_process_label.setText(_translate("MainWindow", "Процесс..."))
