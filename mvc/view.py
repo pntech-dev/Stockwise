@@ -1,6 +1,16 @@
+from PyQt5.QtWidgets import QCompleter, QTableWidgetItem, QHeaderView
+
+
 class View:
     def __init__(self, ui):
         self.ui = ui
+
+        # Настройки таблицы
+        headers = ['Номенклатура', 'Количество', 'Ед. изм.', 'Изделие'] # Заголовки таблицы
+        self.ui.data_tableWidget.setColumnCount(len(headers)) # Устанавливаем количество столбцов
+        self.ui.data_tableWidget.setHorizontalHeaderLabels(headers) # Устанавливаем заголовки столбцов
+        header = self.ui.data_tableWidget.horizontalHeader() # Получаем заголовок
+        header.setSectionResizeMode(QHeaderView.ResizeToContents) # Растяжение колонок по данным в колонке
 
     def get_search_field_text(self):
         """Функция возвращает текст из поля поиска."""
@@ -14,9 +24,39 @@ class View:
         """Функция устанавливает путь к папке для сохранения."""
         self.ui.save_file_path_line_lineEdit.setText(path)
 
+    def set_search_completer(self, suggestions):
+        """Функция устанавливает QCompleter для поля поиска."""
+        completer = QCompleter(suggestions, self.ui.search_line_lineEdit)
+        completer.setCaseSensitivity(0)
+        self.ui.search_line_lineEdit.setCompleter(completer)
+
     def update_clear_button_state(self, enabled):
         """Функция обновляет состояние кнопки очистки поля поиска."""
         self.ui.search_line_clear_pushButton.setEnabled(enabled)
+    
+    def update_table_widget_data(self, data):
+        """Функция обновляет данные в таблице."""
+        self.ui.data_tableWidget.setRowCount(0) # Очищаем только строки
+
+        # Заполняем таблицу данными
+        for row_index, item in enumerate(data): # Перебираем все строки данных
+            self.ui.data_tableWidget.insertRow(row_index) # Добавляем строку в таблицу
+
+            # Устанавливаем дааные в колонку "Номенклатура"
+            nomenclature_item = QTableWidgetItem(item.get('Номенклатура', ''))
+            self.ui.data_tableWidget.setItem(row_index, 0, nomenclature_item)
+
+            # Устанавливаем данные в колонку "Количество"
+            quantity_item = QTableWidgetItem(str(item.get('Количество', '')))
+            self.ui.data_tableWidget.setItem(row_index, 1, quantity_item)
+
+            # Устанавливаем данные в клонку "Ед. изм."
+            unit_item = QTableWidgetItem(item.get('Ед. изм.', ''))
+            self.ui.data_tableWidget.setItem(row_index, 2, unit_item)
+
+            # Устанавливаем данные в колонку "Изделие"
+            product_item = QTableWidgetItem(", ".join(item.get('Изделие', '')))
+            self.ui.data_tableWidget.setItem(row_index, 3, product_item)
 
     def search_field_changed(self, handler):
         """Функция вызывает обработчик при изменении поля поиска."""
