@@ -43,8 +43,12 @@ class Controller:
         
         if semi_finished_products:
             product_materials = self.model.get_product_materials(semi_finished_products)
-            
+            self.model.current_product_materials = product_materials
             self.view.update_table_widget_data(data=product_materials)
+            self.view.update_export_button_state(enabled=True) # Изменяем состояние кнопки экспорта
+        else:
+            self.view.update_table_widget_data(data=[])
+            self.view.update_export_button_state(enabled=False)
 
     def on_clear_button_clicked(self):
         """Функция обрабатывает нажатие кнопки очистки поля поиска."""

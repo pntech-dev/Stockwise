@@ -58,6 +58,10 @@ class View:
             product_item = QTableWidgetItem(", ".join(item.get('Изделие', '')))
             self.ui.data_tableWidget.setItem(row_index, 3, product_item)
 
+    def update_export_button_state(self, enabled):
+        """Функция обновляет состояние кнопки экспорта."""
+        self.ui.export_pushButton.setEnabled(enabled)
+
     def search_field_changed(self, handler):
         """Функция вызывает обработчик при изменении поля поиска."""
         self.ui.search_line_lineEdit.textChanged.connect(handler)
