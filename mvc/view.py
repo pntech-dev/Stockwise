@@ -15,6 +15,20 @@ class View:
     def get_search_field_text(self):
         """Функция возвращает текст из поля поиска."""
         return self.ui.search_line_lineEdit.text()
+    
+    def get_save_path(self):
+        """Функция возвращает путь к папке для сохранения."""
+        return self.ui.save_file_path_line_lineEdit.text()
+
+    def get_export_format(self):
+        """Функция возвращает выбраный формат для экспорта."""
+        if self.ui.export_formats_excel_radioButton.isChecked():
+            return "xlsx"
+        elif self.ui.export_formats_word_radioButton.isChecked():
+            return "docx"
+        elif self.ui.export_formats_pdf_radioButton.isChecked():
+            return "pdf"
+        return None # Возвращаем None, если ничего не выбрано
 
     def clear_search_field(self):
         """Функция очищает поле поиска."""
@@ -73,3 +87,7 @@ class View:
     def choose_save_folder_path(self, handler):
         """Функция вызывает обработчик при нажатии кнопки выбора папки для сохранения."""
         self.ui.save_file_path_line_choose_pushButton.clicked.connect(handler)
+
+    def export_button_clicked(self, handler):
+        """Функция вызывает обработчик при нажатии кнопки экспорта."""
+        self.ui.export_pushButton.clicked.connect(handler)
