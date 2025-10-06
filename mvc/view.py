@@ -91,3 +91,7 @@ class View:
     def export_button_clicked(self, handler):
         """Функция вызывает обработчик при нажатии кнопки экспорта."""
         self.ui.export_pushButton.clicked.connect(handler)
+
+    def norms_calculations_changed(self, handler):
+        """Функция вызывает обработчик при изменении нормы расчета."""
+        self.ui.norms_calculations_spinBox.valueChanged.connect(handler)

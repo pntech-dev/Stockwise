@@ -2,12 +2,15 @@ import os
 import yaml
 import pandas as pd
 
+# Экспорт в Word
 from docx import Document
 
+# Эксопрт в Excel
 from openpyxl import Workbook
 from openpyxl.styles import Border, Side, Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
 
+# Экспортв PDF
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
@@ -27,6 +30,8 @@ class Model:
 
         self.current_product = ""  # Текущее выбранное изделие
         self.current_product_materials = []  # Список материалов текущего изделия
+
+        self.norms_calculations_value = 1000 # Значение на которое рассчитываются нормы изделия
 
     def __load_config(self):
         """Функция загружает конфигурацию из файла config.yaml."""
@@ -220,7 +225,7 @@ class Model:
         return semi_finished_products
 
     def get_product_materials(self, semi_finished_products):
-        """Функция возвращает список материалов входящих в продукт. (Оптимизировано)"""
+        """Функция возвращает список материалов входящих в продукт."""
         product_materials_dict = {}  # Используем словарь для быстрой проверки существования
 
         for semi_finished_product in semi_finished_products:
@@ -236,6 +241,10 @@ class Model:
                     data_list = df.to_dict('records')
 
                     for new_item in data_list:
+                        # Рассчитываем норму материалов на заданное количество
+                        if self.norms_calculations_value is not None and self.norms_calculations_value != 1000:
+                            new_item['Количество'] = (new_item['Количество'] / 1000) * self.norms_calculations_value
+
                         nomenclature = new_item['Номенклатура']
                         product_name = os.path.splitext(
                             os.path.basename(semi_finished_product))[0]

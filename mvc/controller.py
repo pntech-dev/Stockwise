@@ -20,6 +20,7 @@ class Controller:
         self.view.clear_button_clicked(self.on_clear_button_clicked) # Нажатие кнопки очистки
         self.view.choose_save_folder_path(self.on_choose_save_folder_path) # Нажатие кнопки выбора папки для сохранения
         self.view.export_button_clicked(self.on_export_button_clicked) # Нажатие кнопки экспорта
+        self.view.norms_calculations_changed(self.on_norms_calculations_changed) # Изменение нормы расчета
 
     def __check_available_products_folder(self):
         """Функция проверяет доступность папки изделий на сервере."""
@@ -85,3 +86,8 @@ class Controller:
                 })
 
         self.model.export_data(save_path=save_path, export_format=export_format, data=data_to_export)
+
+    def on_norms_calculations_changed(self, value):
+        """Функция обрабатывает изменение нормы расчета."""
+        self.model.norms_calculations_value = value
+        self.on_search_field_changed() # Обновляем данные в таблице
