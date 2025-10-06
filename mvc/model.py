@@ -143,7 +143,7 @@ class Model(QObject):
         wb.save(save_path) # Сохраняем файл
 
         progress_bar_value = 100
-        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+        self.progress_changed.emit("Экспортирование завершено", progress_bar_value)
 
     def __export_to_word(self, save_path, data):
         """Функция экспортирует данные в Word файл."""
@@ -189,7 +189,7 @@ class Model(QObject):
         document.save(save_path) # Сохраняем файл
 
         progress_bar_value = 100
-        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+        self.progress_changed.emit("Экспортирование завершено", progress_bar_value)
 
     def __export_to_pdf(self, save_path, data):
         """Функция экспортирует данные в PDF файл с использованием ReportLab."""
@@ -277,7 +277,7 @@ class Model(QObject):
         doc.build(story)
 
         progress_bar_value = 100
-        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+        self.progress_changed.emit("Экспортирование завершено", progress_bar_value)
 
     def get_semi_finished_products(self, product_name):
         """Функция возвращает список полуфабрикатов входящих в продукт."""
@@ -389,11 +389,11 @@ class Model(QObject):
         """Функция экспортирует данные в указанный формат."""
         if export_format is None:
             print("Не выбран формат экспорта.")
-            return
+            return 1
         
         if not data:
             print("Нет данных для экспорта.")
-            return
+            return 1
         
         save_file_path = os.path.join(save_path, f"{self.current_product}.{export_format}")
 
@@ -405,4 +405,6 @@ class Model(QObject):
             self.__export_to_pdf(save_path=save_file_path, data=data)
         else:
             print("Неподдерживаемый формат экспорта.")
-            return
+            return 1
+
+        return 0

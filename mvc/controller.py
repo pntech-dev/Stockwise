@@ -1,5 +1,7 @@
 import sys
 
+from classes import Notification
+
 from PyQt5.QtWidgets import QFileDialog 
 
 
@@ -88,7 +90,16 @@ class Controller:
                 'Изделие': ", ".join(item['Изделие'])
                 })
 
-        self.model.export_data(save_path=save_path, export_format=export_format, data=data_to_export)
+        status_code = self.model.export_data(save_path=save_path, export_format=export_format, data=data_to_export)
+
+        if status_code == 0:
+            Notification().show_notification_message(msg_type="info", text="Данные успешно экспортированы")
+
+        else:
+            Notification().show_notification_message(msg_type="error", text="Произошла ошибка при экспорте данных.")
+
+        self.view.set_progress_bar_value(value=0) # Устанавливаем занчение прогресс бара
+        self.view.set_progerss_bar_labels_text(text="Процесс...", value=0) # Устанавливаем значения для меток прогресс бара
 
     def on_norms_calculations_changed(self, value):
         """Функция обрабатывает изменение нормы расчета."""
