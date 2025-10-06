@@ -28,6 +28,8 @@ class Controller:
         self.view = view
         self.is_highlighting = False
 
+        self.__check_program_version() # Проверяем версию программы
+
         self.__check_available_products_folder() # Проверяем доступность папки изделий
 
         # Настраиваем QCompleter
@@ -54,6 +56,37 @@ class Controller:
         # Сигналы
         self.model.progress_changed.connect(self.on_progress_bar_changed) # Сигнал изменения значения в прогресс баре
         self.model.show_notification.connect(self.show_notification) # Сигнал показа уведомления
+
+    def __check_program_version(self):
+        """Функция проверяет версию программы"""
+        is_version = self.model.check_program_version() # Проверяем версию программы
+
+        # Если произошла ошибка во время проверки версии
+        if is_version is None: 
+            action = Notification().show_action_message(msg_type="error", 
+                                                        title="Ошибка проверки версии", 
+                                                        text="Во время проверки версии произошла ошибка!\nОшибка связана с путём к файлу конфигурации\nЖелаете открыть файл конфигурации?", 
+                                                        buttons=["Да", "Нет"])
+
+            if action:
+                self.model.open_config_file()
+                exit()
+            else:
+                exit()
+
+        # Если версия не совпадает (требуется обновление)
+        elif not is_version:
+            action = Notification().show_action_message(msg_type="warning", 
+                                                        title="Обновление", 
+                                                        text="Обнаружена новая версия программы\nЖелаете обновить?", 
+                                                        buttons=["Обновить", "Закрыть"])
+
+            if action:
+                self.model.update_program()
+                sys.exit() # Закрываем основное приложение после запуска обновления
+            else:
+                sys.exit()
+
 
     def __check_available_products_folder(self):
         """Функция проверяет доступность папки изделий на сервере."""
