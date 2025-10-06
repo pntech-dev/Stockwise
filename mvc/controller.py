@@ -22,6 +22,9 @@ class Controller:
         self.view.export_button_clicked(self.on_export_button_clicked) # Нажатие кнопки экспорта
         self.view.norms_calculations_changed(self.on_norms_calculations_changed) # Изменение нормы расчета
 
+        # Сигналы
+        self.model.progress_changed.connect(self.on_progress_bar_changed) # Сигнал изменения значения в прогресс баре
+
     def __check_available_products_folder(self):
         """Функция проверяет доступность папки изделий на сервере."""
         if not self.model.is_products_folder_available:
@@ -91,3 +94,8 @@ class Controller:
         """Функция обрабатывает изменение нормы расчета."""
         self.model.norms_calculations_value = value
         self.on_search_field_changed() # Обновляем данные в таблице
+
+    def on_progress_bar_changed(self, text, value):
+        """Функция обрабатывает изменение значения в прогресс баре."""
+        self.view.set_progress_bar_value(value) # Устанавливаем занчение прогресс бара
+        self.view.set_progerss_bar_labels_text(text=text, value=value) # Устанавливаем значения для меток прогресс бара

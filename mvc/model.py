@@ -2,6 +2,8 @@ import os
 import yaml
 import pandas as pd
 
+from PyQt5.QtCore import QObject, pyqtSignal
+
 # Экспорт в Word
 from docx import Document
 
@@ -19,8 +21,12 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 
-class Model:
+class Model(QObject):
+    progress_changed = pyqtSignal(str, int) # Сигнал изменения значения прогресс бара
+
     def __init__(self):
+        super().__init__()
+        
         self.path_to_products_folder = None
         self.is_products_folder_available = False
         self.__load_config()  # Загружаем конфигурацию при инициализации
@@ -32,6 +38,11 @@ class Model:
         self.current_product_materials = []  # Список материалов текущего изделия
 
         self.norms_calculations_value = 1000 # Значение на которое рассчитываются нормы изделия
+
+        # Настройки для прогресс бара
+        self.progress_bar_export_to_excel_step_size = 11
+        self.progress_bar_export_to_word_step_size = 6
+        self.progress_bar_export_to_pdf_step_size = 5
 
     def __load_config(self):
         """Функция загружает конфигурацию из файла config.yaml."""
@@ -55,7 +66,13 @@ class Model:
 
     def __export_to_excel(self, save_path, data):
         """Функция экспортирует данные в Excel файл."""
-        df = pd.DataFrame(data)
+        progress_bar_value = 0
+        progress_bar_process_text = f"Экспортируем данные в документ {os.path.basename(save_path)}"
+
+        df = pd.DataFrame(data) # Преобразуем данные в DataFrame
+
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
         # Преобразуем списки в строки, как в других функциях экспорта
         for col in df.columns:
@@ -66,9 +83,15 @@ class Model:
         ws = wb.active
         ws.title = "Данные"
 
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
         # Записываем данные в лист
         for r in dataframe_to_rows(df, index=False, header=True):
             ws.append(r)
+
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
         # Определяем стиль границ
         thin_border = Border(
@@ -78,12 +101,18 @@ class Model:
             bottom=Side(style='thin')
         )
 
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
         # Применяем границы и выравнивание ко всем ячейкам
         for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
             for cell in row:
                 cell.border = thin_border
                 # Устанавливаем перенос текста и выравнивание
                 cell.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
+
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
         
         # Устанавливаем фиксированную ширину колонок, чтобы поместиться на A4
         # Ширины колонок подобраны для стандартного листа A4 в книжной ориентации
@@ -92,9 +121,15 @@ class Model:
         ws.column_dimensions['C'].width = 10  # Ед. изм.
         ws.column_dimensions['D'].width = 35  # Изделие
 
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
         # Настройка параметров страницы
         ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
         ws.page_setup.paper_size = ws.PAPERSIZE_A4
+
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
         
         # Устанавливаем область печати и параметры для вписывания в страницу
         ws.print_area = f'A1:{ws.cell(row=ws.max_row, column=ws.max_column).coordinate}'
@@ -102,21 +137,45 @@ class Model:
         ws.page_setup.fitToWidth = 1
         ws.page_setup.fitToHeight = 0 # 0 означает, что высота будет подстраиваться
 
-        wb.save(save_path)
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+        
+        wb.save(save_path) # Сохраняем файл
+
+        progress_bar_value = 100
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
     def __export_to_word(self, save_path, data):
         """Функция экспортирует данные в Word файл."""
-        document = Document()
+        progress_bar_value = 0
+        progress_bar_process_text = f"Экспортируем данные в документ {os.path.basename(save_path)}"
 
-        df = pd.DataFrame(data)
+        document = Document() # Создаём экземпляр документа
+
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
+        df = pd.DataFrame(data) # Преобразуем данные в DataFrame
+
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
         
+        # Создаём и настраиваем таблицу
         table = document.add_table(rows=1, cols=len(df.columns))
         table.style = 'Table Grid'
 
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
+        # Определяем и записываем заголовки
         hdr_cells = table.rows[0].cells
         for i, col_name in enumerate(df.columns):
             hdr_cells[i].text = str(col_name)
+        
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
+        # Вносим данные в документ
         for index, row in df.iterrows():
             row_cells = table.add_row().cells
             for i, cell_value in enumerate(row):
@@ -124,13 +183,22 @@ class Model:
                     cell_value = ", ".join(map(str, cell_value))
                 row_cells[i].text = str(cell_value)
 
-        document.save(save_path)
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
+        document.save(save_path) # Сохраняем файл
+
+        progress_bar_value = 100
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
     def __export_to_pdf(self, save_path, data):
         """Функция экспортирует данные в PDF файл с использованием ReportLab."""
         if not data:
             print("Нет данных для экспорта.")
             return
+        
+        progress_bar_value = 0
+        progress_bar_process_text = f"Экспортируем данные в документ {os.path.basename(save_path)}"
 
         # --- Регистрация шрифтов --- 
         try:
@@ -141,6 +209,9 @@ class Model:
             print(f"Не удалось зарегистрировать шрифты Arial: {e}")
             print("Пожалуйста, убедитесь, что шрифты Arial.ttf и Arialbd.ttf доступны.")
             return
+        
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
         # Используем книжную ориентацию (letter)
         doc = SimpleDocTemplate(save_path, pagesize=letter)
@@ -150,6 +221,9 @@ class Model:
         paragraph_style = styles['Normal']
         paragraph_style.fontName = 'Arial'
         paragraph_style.fontSize = 8
+
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
         # --- Подготовка данных ---
         df = pd.DataFrame(data)
@@ -170,6 +244,9 @@ class Model:
             data_rows.append(new_row)
 
         table_data = [headings] + data_rows
+
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
         # --- Создание и стилизация таблицы ---
         # Ширина колонок для книжной ориентации
@@ -192,9 +269,15 @@ class Model:
         
         table.setStyle(style)
 
+        progress_bar_value += self.progress_bar_export_to_excel_step_size
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
         # --- Сборка документа ---
         story.append(table)
         doc.build(story)
+
+        progress_bar_value = 100
+        self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
     def get_semi_finished_products(self, product_name):
         """Функция возвращает список полуфабрикатов входящих в продукт."""

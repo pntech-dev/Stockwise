@@ -44,6 +44,15 @@ class View:
         completer.setCaseSensitivity(0)
         self.ui.search_line_lineEdit.setCompleter(completer)
 
+    def set_progress_bar_value(self, value):
+        """Функция устанавливает значение в прогресс баре."""
+        self.ui.progressBar.setValue(value)
+
+    def set_progerss_bar_labels_text(self, text, value):
+        """Функция устанавливает текст в лейблах в прогресс бара."""
+        self.ui.progress_bar_labels_process_label.setText(text)
+        self.ui.progress_bar_labels_percents_label.setText(f"{value}%")
+
     def update_clear_button_state(self, enabled):
         """Функция обновляет состояние кнопки очистки поля поиска."""
         self.ui.search_line_clear_pushButton.setEnabled(enabled)
