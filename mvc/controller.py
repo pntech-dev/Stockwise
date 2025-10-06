@@ -26,12 +26,18 @@ class Controller:
 
         # Сигналы
         self.model.progress_changed.connect(self.on_progress_bar_changed) # Сигнал изменения значения в прогресс баре
+        self.model.show_notification.connect(self.show_notification) # Сигнал показа уведомления
 
     def __check_available_products_folder(self):
         """Функция проверяет доступность папки изделий на сервере."""
         if not self.model.is_products_folder_available:
-            pass # ДОБАВИТЬ УВЕДОМЛЕНИЕ!!!
             sys.exit()
+
+    def show_notification(self, msg_type, text):
+        """Функция показывает уведомление."""
+        Notification().show_notification_message(msg_type=msg_type, text=text)
+        self.view.set_progress_bar_value(value=0) # Устанавливаем занчение прогресс бара
+        self.view.set_progerss_bar_labels_text(text="Процесс...", value=0) # Устанавливаем значения для меток прогресс бара
 
     def on_search_field_changed(self):
         """Функция обрабатывает изменение поля поиска."""
@@ -90,16 +96,7 @@ class Controller:
                 'Изделие': ", ".join(item['Изделие'])
                 })
 
-        status_code = self.model.export_data(save_path=save_path, export_format=export_format, data=data_to_export)
-
-        if status_code == 0:
-            Notification().show_notification_message(msg_type="info", text="Данные успешно экспортированы")
-
-        else:
-            Notification().show_notification_message(msg_type="error", text="Произошла ошибка при экспорте данных.")
-
-        self.view.set_progress_bar_value(value=0) # Устанавливаем занчение прогресс бара
-        self.view.set_progerss_bar_labels_text(text="Процесс...", value=0) # Устанавливаем значения для меток прогресс бара
+        self.model.export_data(save_path=save_path, export_format=export_format, data=data_to_export)
 
     def on_norms_calculations_changed(self, value):
         """Функция обрабатывает изменение нормы расчета."""
