@@ -3,19 +3,46 @@ import sys
 from classes import Notification
 
 from PyQt5.QtWidgets import QFileDialog 
+from PyQt5.QtCore import QStringListModel, QSortFilterProxyModel, Qt
+
+
+class CustomFilterProxyModel(QSortFilterProxyModel):
+    def filterAcceptsRow(self, source_row, source_parent):
+        index = self.sourceModel().index(source_row, 0, source_parent)
+        item_text = self.sourceModel().data(index, Qt.DisplayRole)
+        
+        filter_string = self.filterRegExp().pattern()
+        search_words = filter_string.lower().split()
+        
+        if not search_words:
+            return True
+            
+        item_text_lower = item_text.lower()
+        
+        return all(word in item_text_lower for word in search_words)
 
 
 class Controller:
     def __init__(self, model, view):
         self.model = model
         self.view = view
+        self.is_highlighting = False
 
         self.__check_available_products_folder() # Проверяем доступность папки изделий
 
         # Настраиваем QCompleter
         self.model.update_product_names()
         suggestions_lst = [" ".join(name) for name in self.model.products_names]
-        self.view.set_search_completer(suggestions_lst)
+        
+        string_list_model = QStringListModel(suggestions_lst)
+        
+        self.proxy_model = CustomFilterProxyModel()
+        self.proxy_model.setSourceModel(string_list_model)
+        
+        self.completer = self.view.set_search_completer(self.proxy_model)
+        self.completer.highlighted.connect(self.on_completer_highlighted)
+        
+        self.view.get_search_line_edit().textChanged.connect(self.on_text_changed_for_filter)
 
         # Обработчики
         self.view.search_field_changed(self.on_search_field_changed) # Изменение текста в поле поиска
@@ -107,3 +134,12 @@ class Controller:
         """Функция обрабатывает изменение значения в прогресс баре."""
         self.view.set_progress_bar_value(value) # Устанавливаем занчение прогресс бара
         self.view.set_progerss_bar_labels_text(text=text, value=value) # Устанавливаем значения для меток прогресс бара
+
+    def on_completer_highlighted(self, text):
+        self.is_highlighting = True
+
+    def on_text_changed_for_filter(self, text):
+        if self.is_highlighting:
+            self.is_highlighting = False
+            return
+        self.proxy_model.setFilterRegExp(text)

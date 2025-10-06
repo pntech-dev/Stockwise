@@ -38,11 +38,17 @@ class View:
         """Функция устанавливает путь к папке для сохранения."""
         self.ui.save_file_path_line_lineEdit.setText(path)
 
-    def set_search_completer(self, suggestions):
+    def set_search_completer(self, model):
         """Функция устанавливает QCompleter для поля поиска."""
-        completer = QCompleter(suggestions, self.ui.search_line_lineEdit)
+        completer = QCompleter(model, self.ui.search_line_lineEdit)
         completer.setCaseSensitivity(0)
+        completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
         self.ui.search_line_lineEdit.setCompleter(completer)
+        return completer
+
+    def get_search_line_edit(self):
+        """Возвращает виджет QLineEdit для поиска."""
+        return self.ui.search_line_lineEdit
 
     def set_progress_bar_value(self, value):
         """Функция устанавливает значение в прогресс баре."""
