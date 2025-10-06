@@ -1,5 +1,6 @@
 import os
 import yaml
+import subprocess
 import pandas as pd
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -27,6 +28,9 @@ class Model(QObject):
 
     def __init__(self):
         super().__init__()
+
+        self.program_version_number = None # Версия программы
+        self.program_server_path = None # Путь к программе на сервере
         
         self.path_to_products_folder = None
         self.is_products_folder_available = False
@@ -41,9 +45,9 @@ class Model(QObject):
         self.norms_calculations_value = 1000 # Значение на которое рассчитываются нормы изделия
 
         # Настройки для прогресс бара
-        self.progress_bar_export_to_excel_step_size = 11
-        self.progress_bar_export_to_word_step_size = 6
-        self.progress_bar_export_to_pdf_step_size = 5
+        self.progress_bar_export_to_excel_step_size = 11 # Excel
+        self.progress_bar_export_to_word_step_size = 6 # Word
+        self.progress_bar_export_to_pdf_step_size = 5 # PDF
 
     def __load_config(self):
         """Функция загружает конфигурацию из файла config.yaml."""
@@ -58,6 +62,9 @@ class Model(QObject):
             self.show_notification.emit("error", "В файле config.yaml не указан путь к папке изделий.")
             return
 
+        # Записываем данные из файла кофигурации
+        self.program_version_number = config["program_version_number"]
+        self.program_server_path = config["server_program_path"]
         path = config["path_to_products_folder"]
         if os.path.exists(path) and os.path.isdir(path):
             self.path_to_products_folder = path
@@ -371,6 +378,32 @@ class Model(QObject):
         except Exception as e:
             self.show_notification.emit("error", f"Ошибка при получении пути к папке Desktop: {e}")
 
+    def check_program_version(self):
+        """Функция проверяет версию программы"""
+        if not self.program_server_path or not os.path.exists(self.program_server_path):
+            return None
+        
+        program_server_files = os.listdir(self.program_server_path)
+        for file_name in program_server_files:
+            # Ищем файл, который начинается с "config" и заканчивается ".yaml"
+            if file_name.startswith("config") and file_name.endswith(".yaml"):
+                try:
+                    with open(os.path.join(self.program_server_path, file_name), "r", encoding="utf-8") as f:
+                        config_data = yaml.safe_load(f)
+
+                    program_server_version = config_data["program_version_number"] # Получаем версию программы на сервере
+                    
+                    if not program_server_version:
+                        return None
+
+                    if program_server_version <= self.program_version_number:
+                        return True
+                except IndexError:
+                    # Если формат имени файла не соответствует ожидаемому, пропускаем его
+                    continue
+        else:
+            return False
+
     def update_product_names(self):
         """Функция обновляет список названий изделий, рекурсивно обходя папку."""
         products_names = []  # Создаем пустой список названий изделий
@@ -399,6 +432,20 @@ class Model(QObject):
             self.products_names = products_names
         except Exception as e:
             self.show_notification.emit("error", f"Ошибка при обновлении списка названий изделий: {e}")
+
+    def update_program(self):
+        """Функция вызывает обновление программы"""
+        updater_path = os.path.join(os.getcwd(), "updater.exe") # Создаём путь к программе обновления
+        
+        # Проверяем, что updater.exe существует
+        if not os.path.exists(updater_path):
+            self.show_notification.emit("error", f"Не найден файл обновления: {updater_path}")
+            return
+
+        # Запускаем updater.exe с запросом прав администратора
+        # Используем 'runas' для повышения прав
+        subprocess.run(['powershell', '-Command', f'Start-Process "{updater_path}" -ArgumentList "{self.program_server_path}" -Verb RunAs'], shell=True)
+
 
     def export_data(self, save_path, export_format, data):
         """Функция экспортирует данные в указанный формат."""

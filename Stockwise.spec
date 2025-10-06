@@ -5,7 +5,7 @@ a = Analysis(
     ['app.py'],
     pathex=[],
     binaries=[],
-    datas=[('config.yaml', '.')],
+    datas=[('config.yaml', 'updater.exe', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
