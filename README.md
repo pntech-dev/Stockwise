@@ -2,6 +2,10 @@
 
 A simple and powerful desktop application for calculating and consolidating bill of materials.
 
+## Changes in the new version
+
+- **Added Material Blacklist**: You can now create a `blacklist` in the `config.yaml` file. Any nomenclature item containing words from this list will be automatically excluded from the final bill of materials. This is useful for filtering out auxiliary materials, tools, or other items that shouldn't be in the report.
+
 ## Description
 
 **Stockwise** is a desktop application designed for engineers, technologists, and planning specialists. It automates the process of gathering and calculating material requirements for manufacturing various products.
@@ -16,6 +20,7 @@ The application scans a structured network directory where each product is repre
 -   **Dynamic Norm Calculation**: Ability to calculate required material quantities for any production volume (defaults to 1000 units).
 -   **Export to 3 Formats**: Exports the final specification to **Excel (.xlsx)**, **Word (.docx)**, and **PDF**, with pre-configured formatting for A4 printing.
 -   **Auto-Update**: The application automatically checks for a new version on the server and prompts for an update.
+-   **Material Blacklist**: Exclude specific materials from the final calculation using a configurable blacklist.
 -   **Modern UI**: A clean and responsive user interface built with PyQt5.
 
 ## How It Works
@@ -27,6 +32,10 @@ For the application to function correctly, the data must be stored in a specific
     -   *Example*: The path `\SRV\PNDatabases\Stockwise\БВВ\01` will be interpreted as the product `БВВ 01`.
 3.  **Specification Files**: Inside the final product folder (or in a subfolder named `рмп`), there should be Excel files (`.xlsx`, `.xls`) containing the list of materials.
 4.  **Excel File Structure**: The application expects a sheet named `TDSheet` to contain at least three columns: `Номенклатура` (Nomenclature), `Количество` (Quantity), and `Ед. изм.` (Unit).
+5.  **Configuration**: The main settings are in `config.yaml`:
+    - `path_to_products_folder`: Path to the root folder with product data.
+    - `server_program_path`: Path to the server folder for checking updates.
+    - `blacklist`: (Optional) A list of words to exclude materials from the calculation.
 
 ## Installation and Launch
 
@@ -53,6 +62,7 @@ To run the project from the source code, follow these steps:
     -   Open the `config.yaml` file.
     -   Set the correct path to the network folder with products in the `path_to_products_folder` parameter.
     -   Specify the path to the folder with the current version of the program on the server in `server_program_path`.
+    -   Optionally, add a `blacklist` with a list of materials to be excluded.
 
 5.  **Run the application:**
     ```bash
@@ -76,6 +86,10 @@ To run the project from the source code, follow these steps:
 
 Простое настольное приложение для расчёта и консолидации спецификаций материалов.
 
+## Изменения в новой версии
+
+- **Добавлен чёрный список материалов**: Теперь вы можете создать список `blacklist` в файле `config.yaml`. Любая номенклатура, содержащая слова из этого списка, будет автоматически исключена из итоговой спецификации. Это полезно для фильтрации вспомогательных материалов, оснастки или других позиций, которые не должны попадать в ведомость.
+
 ## Описание
 
 **Stockwise** — это десктопное приложение, разработанное для инженеров, технологов и специалистов по планированию. Оно автоматизирует процесс сбора и расчёта требований к материалам для производства различных изделий.
@@ -90,6 +104,7 @@ To run the project from the source code, follow these steps:
 -   **Динамический пересчёт норм**: Возможность рассчитать требуемое количество материалов для любого объёма производства (по умолчанию — на 1000 единиц).
 -   **Экспорт в 3 формата**: Выгрузка итоговой спецификации в **Excel (.xlsx)**, **Word (.docx)** и **PDF** с настроенным форматированием для печати на листах A4.
 -   **Автообновление**: Приложение автоматически проверяет наличие новой версии на сервере и предлагает выполнит обновление.
+-   **Чёрный список материалов**: Исключайте определённые материалы из итогового расчёта с помощью настраиваемого чёрного списка.
 -   **Современный интерфейс**: Понятный и отзывчивый интерфейс, созданный с помощью PyQt5.
 
 ## Принцип работы
@@ -101,6 +116,10 @@ To run the project from the source code, follow these steps:
     -   *Пример*: Путь `\SRV\PNDatabases\Stockwise\БВВ\01` будет интерпретирован как изделие `БВВ 01`.
 3.  **Файлы спецификаций**: Внутри конечной папки изделия (или в подпапке `рмп`) должны находиться Excel-файлы (`.xlsx`, `.xls`), содержащие перечень материалов.
 4.  **Структура Excel-файла**: Приложение ожидает, что лист с названием `TDSheet` будет содержать как минимум три колонки: `Номенклатура`, `Количество`, `Ед. изм.`.
+5.  **Конфигурация**: Основные настройки находятся в `config.yaml`:
+    - `path_to_products_folder`: Путь к корневой папке с данными изделий.
+    - `server_program_path`: Путь к папке на сервере для проверки обновлений.
+    - `blacklist`: (Опционально) Список слов для исключения материалов из расчёта.
 
 ## Установка и запуск
 
@@ -127,6 +146,7 @@ To run the project from the source code, follow these steps:
     -   Откройте файл `config.yaml`.
     -   Укажите корректный путь к сетевой папке с изделиями в параметре `path_to_products_folder`.
     -   Укажите путь к папке с актуальной версий программы на сервере в `server_program_path`.
+    -   При необходимости добавьте `blacklist` со списком материалов для исключения.
 
 5.  **Запустите приложение:**
     ```bash
