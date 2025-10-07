@@ -6,6 +6,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
+        ('version 1.1.0.txt', '.'),
         ('config.yaml', '.'),
         ('updater.exe', '.')
     ],
@@ -35,6 +36,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['resources/icon.ico'],
 )
 coll = COLLECT(
     exe,
