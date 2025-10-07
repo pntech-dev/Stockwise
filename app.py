@@ -1,8 +1,10 @@
 import sys
 
+from resources import resources_rc
 from ui.mainUI import Ui_MainWindow
 from mvc import Model, View, Controller
 
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
 
@@ -12,6 +14,10 @@ class MyWindow(QMainWindow):
 
         self.main_ui = Ui_MainWindow()
         self.main_ui.setupUi(self)
+
+        # Устанавливаем иконку приложения
+        icon = QIcon(":/icons/icon.ico")
+        self.setWindowIcon(icon)
 
         # MVC Initialization
         self.model = Model()

@@ -31,6 +31,8 @@ class Model(QObject):
 
         self.program_version_number = None # Версия программы
         self.program_server_path = None # Путь к программе на сервере
+        self.use_rmp_folder = False # Использовать папку "РМП"
+        self.materials_blacklist = [] # Список материалов, с которым сверяются добавляемые материалы
         
         self.path_to_products_folder = None
         self.is_products_folder_available = False
@@ -65,6 +67,9 @@ class Model(QObject):
         # Записываем данные из файла кофигурации
         self.program_version_number = config["program_version_number"]
         self.program_server_path = config["server_program_path"]
+        self.use_rmp_folder = config.get("use_rmp_folder", False)
+        self.materials_blacklist = config.get("blacklist", [])
+
         path = config["path_to_products_folder"]
         if os.path.exists(path) and os.path.isdir(path):
             self.path_to_products_folder = path
@@ -310,7 +315,7 @@ class Model(QObject):
                         self.product_path, item_name)  # Формируем путь к элементу
 
                     # Если это папка "рмп", обрабатываем ее содержимое
-                    if item_name.lower() == "рмп" and os.path.isdir(item_path):
+                    if self.use_rmp_folder and item_name.lower() == "рмп" and os.path.isdir(item_path):
                         # Получаем список файлов в папке "рмп"
                         for rmp_file_name in os.listdir(item_path):
                             rmp_file_path = os.path.join(item_path, rmp_file_name)
@@ -349,21 +354,31 @@ class Model(QObject):
                         nomenclature = new_item['Номенклатура']
                         product_name = os.path.splitext(
                             os.path.basename(semi_finished_product))[0]
-
-                        # Если материал уже есть в словаре
-                        if nomenclature in product_materials_dict:
-                            existing_item = product_materials_dict[nomenclature]
-                            # Увеличиваем количество
-                            existing_item['Количество'] += new_item['Количество']
-
-                            # Если название изделия не найдено в списке изделий
-                            if product_name not in existing_item['Изделие']:
-                                # Добавляем название изделия в список изделий
-                                existing_item['Изделие'].append(product_name)
+                        
+                        # Проверяем находиться ли материал в блэклисте
+                        in_blacklist = False
+                        for word in self.materials_blacklist:
+                            if word.lower() in nomenclature.lower():
+                                in_blacklist = True
+                                break
+                        
+                        if in_blacklist:
+                            continue
                         else:
-                            # Если материал не найден, добавляем его в словарь
-                            new_item['Изделие'] = [product_name]
-                            product_materials_dict[nomenclature] = new_item
+                            # Если материал уже есть в словаре
+                            if nomenclature in product_materials_dict:
+                                existing_item = product_materials_dict[nomenclature]
+                                # Увеличиваем количество
+                                existing_item['Количество'] += new_item['Количество']
+
+                                # Если название изделия не найдено в списке изделий
+                                if product_name not in existing_item['Изделие']:
+                                    # Добавляем название изделия в список изделий
+                                    existing_item['Изделие'].append(product_name)
+                            else:
+                                # Если материал не найден, добавляем его в словарь
+                                new_item['Изделие'] = [product_name]
+                                product_materials_dict[nomenclature] = new_item
                 except Exception as e:
                     self.show_notification.emit("error", f"Ошибка при чтении файла {semi_finished_product}: {e}")
             else:

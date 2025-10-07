@@ -1,3 +1,6 @@
+from resources import resources_rc
+
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMessageBox
 
 class Notification:
@@ -6,6 +9,7 @@ class Notification:
             return
 
         msg_box = QMessageBox()
+        msg_box.setWindowIcon(QIcon(":/icons/icon.ico"))
         msg_box.setText(text)
 
         if msg_type == "info":
@@ -24,6 +28,7 @@ class Notification:
 
     def show_action_message(self, msg_type="error", title="", text="", buttons=["Да", "Нет"]):
         msg = QMessageBox()
+        msg.setWindowIcon(QIcon(":/icons/icon.ico"))
         msg.setWindowTitle(title)
         msg.setText(text)
         
