@@ -4,7 +4,7 @@ A simple and powerful desktop application for calculating and consolidating bill
 
 ## Changes in the new version
 
-- **Added Material Blacklist**: You can now create a `blacklist` in the `config.yaml` file. Any nomenclature item containing words from this list will be automatically excluded from the final bill of materials. This is useful for filtering out auxiliary materials, tools, or other items that shouldn't be in the report.
+- **The logic of forming a list of materials has been changed.** Now the names of semi-finished products are not included in the final specification.
 
 ## Description
 
@@ -88,7 +88,7 @@ To run the project from the source code, follow these steps:
 
 ## Изменения в новой версии
 
-- **Добавлен чёрный список материалов**: Теперь вы можете создать список `blacklist` в файле `config.yaml`. Любая номенклатура, содержащая слова из этого списка, будет автоматически исключена из итоговой спецификации. Это полезно для фильтрации вспомогательных материалов, оснастки или других позиций, которые не должны попадать в ведомость.
+- **Изменена логика формирования списка материалов.** Теперь названия полуфабрикатов не попадают в итоговую спецификацию.
 
 ## Описание
 
