@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>816</width>
-    <height>685</height>
+    <width>866</width>
+    <height>726</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -114,7 +114,12 @@ QProgressBar[error=&quot;true&quot;]::chunk {
 QCheckBox {
     color: #1F2937;
     spacing: 4px;
-    border-radius: 6px;
+    border-radius: 6px; /* округленные углы */
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
 }</string>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -129,7 +134,7 @@ QCheckBox {
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <property name="spacing">
-        <number>57</number>
+        <number>16</number>
        </property>
        <property name="leftMargin">
         <number>16</number>
@@ -404,7 +409,7 @@ QCheckBox {
              </font>
             </property>
             <property name="text">
-             <string>Коммерческое управление</string>
+             <string>От кого</string>
             </property>
            </widget>
           </item>
@@ -489,7 +494,10 @@ QCheckBox {
                    </font>
                   </property>
                   <property name="text">
-                   <string>Начальник КУ</string>
+                   <string/>
+                  </property>
+                  <property name="placeholderText">
+                   <string>Начальник цеха</string>
                   </property>
                  </widget>
                 </item>
@@ -553,7 +561,10 @@ QCheckBox {
                    </font>
                   </property>
                   <property name="text">
-                   <string>Новахович И.В.</string>
+                   <string/>
+                  </property>
+                  <property name="placeholderText">
+                   <string>Козинец С.М.</string>
                   </property>
                  </widget>
                 </item>
@@ -605,7 +616,7 @@ QCheckBox {
              </font>
             </property>
             <property name="text">
-             <string>Цех №19</string>
+             <string>Кому</string>
             </property>
            </widget>
           </item>
@@ -690,7 +701,10 @@ QCheckBox {
                    </font>
                   </property>
                   <property name="text">
-                   <string>Начальник цеха №19</string>
+                   <string/>
+                  </property>
+                  <property name="placeholderText">
+                   <string>Начальник КУ</string>
                   </property>
                  </widget>
                 </item>
@@ -754,7 +768,10 @@ QCheckBox {
                    </font>
                   </property>
                   <property name="text">
-                   <string>Козинец С.М.</string>
+                   <string/>
+                  </property>
+                  <property name="placeholderText">
+                   <string>Новахович И.В.</string>
                   </property>
                  </widget>
                 </item>
@@ -890,6 +907,9 @@ QCheckBox {
                 <font>
                  <pointsize>12</pointsize>
                 </font>
+               </property>
+               <property name="placeholderText">
+                <string>БВВ.02 РИДП.426439.518</string>
                </property>
               </widget>
              </item>
@@ -1163,7 +1183,7 @@ QCheckBox {
            <number>0</number>
           </property>
           <item>
-           <widget class="QLabel" name="label_2">
+           <widget class="QLabel" name="save_file_path_label">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -1256,6 +1276,81 @@ QCheckBox {
              </item>
             </layout>
            </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="document_type_frame">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_14">
+          <property name="spacing">
+           <number>16</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QCheckBox" name="report_checkBox">
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Докладная</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="bid_checkBox">
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Заявка</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_7">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
           </item>
          </layout>
         </widget>
