@@ -1,8 +1,8 @@
 import sys
 
 from classes import Notification
+from mvc.document import create_document_window
 
-from PyQt5.QtWidgets import QFileDialog 
 from PyQt5.QtCore import QStringListModel, QSortFilterProxyModel, Qt
 
 
@@ -27,6 +27,8 @@ class MainController:
         self.model = model
         self.view = view
         self.is_highlighting = False
+
+        self.document_window = None # Ссылка на окно документов
 
         self.__check_program_version() # Проверяем версию программы
 
@@ -125,9 +127,23 @@ class MainController:
         self.view.update_clear_button_state(enabled=False) # Изменяем состояние кнопки очистки
 
     def on_export_button_clicked(self):
-        """Функция обрабатывает нажатие кнопки экспорта."""
-        print("Экспорт")
+        """Функция обрабатывает нажатие кнопки экспорта, 
+        вызывая создание окна создания документов."""
+        if not self.model.current_product_materials:
+            self.show_notification("error", "Нет данных для экспорта.\nСначала выберите изделие.")
+            return
 
+        if self.document_window is None:
+            self.document_window = create_document_window(self.model.current_product_materials)
+            self.document_window.show()
+            self.document_window.destroyed.connect(self.on_document_window_destroyed)
+            self.view.update_export_button_state(enabled=False)
+
+    def on_document_window_destroyed(self):
+        """Функция обрабатывает закрытие окна документов."""
+        self.document_window = None
+        self.view.update_export_button_state(enabled=True)
+        
     def on_norms_calculations_changed(self, value):
         """Функция обрабатывает изменение нормы расчета."""
         self.model.norms_calculations_value = value

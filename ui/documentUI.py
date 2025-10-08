@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'ui/memoUI.ui'
+# Form implementation generated from reading ui file 'ui/documentUi.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.11
 #
@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(866, 726)
+        MainWindow.resize(866, 615)
         MainWindow.setStyleSheet("QMainWindow {\n"
 "    background-color: #F2F2F2;\n"
 "}\n"
@@ -119,8 +119,8 @@ class Ui_MainWindow(object):
 "}\n"
 "\n"
 "QCheckBox::indicator {\n"
-"    width: 20px;\n"
-"    height: 20px;\n"
+"    width: 14px;\n"
+"    height: 14px;\n"
 "}")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -692,7 +692,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Докладная записка"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Создание документа"))
         self.number_label.setText(_translate("MainWindow", "Исх №:"))
         self.number_lineEdit.setPlaceholderText(_translate("MainWindow", "150"))
         self.date_label.setText(_translate("MainWindow", "Дата:"))

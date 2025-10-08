@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>866</width>
-    <height>726</height>
+    <height>615</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Докладная записка</string>
+   <string>Создание документа</string>
   </property>
   <property name="styleSheet">
    <string notr="true">QMainWindow {
@@ -118,8 +118,8 @@ QCheckBox {
 }
 
 QCheckBox::indicator {
-    width: 20px;
-    height: 20px;
+    width: 14px;
+    height: 14px;
 }</string>
   </property>
   <widget class="QWidget" name="centralwidget">
