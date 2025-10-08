@@ -60,9 +60,9 @@ class MainView:
             product_item = QTableWidgetItem(", ".join(item.get('Изделие', '')))
             self.ui.data_tableWidget.setItem(row_index, 3, product_item)
 
-    def update_export_button_state(self, enabled):
+    def update_create_document_button_state(self, enabled):
         """Функция обновляет состояние кнопки экспорта."""
-        self.ui.export_pushButton.setEnabled(enabled)
+        self.ui.create_document_pushButton.setEnabled(enabled)
 
     def search_field_changed(self, handler):
         """Функция вызывает обработчик при изменении поля поиска."""
@@ -72,9 +72,9 @@ class MainView:
         """Функция вызывает обработчик при нажатии кнопки очистки поля поиска."""
         self.ui.search_line_clear_pushButton.clicked.connect(handler)
 
-    def export_button_clicked(self, handler):
+    def create_document_button_clicked(self, handler):
         """Функция вызывает обработчик при нажатии кнопки экспорта."""
-        self.ui.export_pushButton.clicked.connect(handler)
+        self.ui.create_document_pushButton.clicked.connect(handler)
 
     def norms_calculations_changed(self, handler):
         """Функция вызывает обработчик при изменении нормы расчета."""
