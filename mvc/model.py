@@ -301,50 +301,57 @@ class Model(QObject):
 
     def get_semi_finished_products(self, product_name):
         """Функция возвращает список полуфабрикатов входящих в продукт."""
+        def add_file(file_path, lst):
+            """Функция добавляет файл в список полуфабрикатов."""
+            if os.path.isfile(file_path) and file_path.lower().endswith(('.xlsx', '.xls')):
+                lst.append(file_path)
+
         try:
-            semi_finished_products = []  # Создаем пустой список полуфабрикатов
+            semi_finished_products = [] # Создаем пустой список полуфабрикатов
             # Формируем путь к папке изделия
-            self.product_path = os.path.join(
-                self.path_to_products_folder, *product_name)
+            self.product_path = os.path.join(self.path_to_products_folder, *product_name)
 
             # Если путь к папке изделия существует
             if os.path.exists(self.product_path) and os.path.isdir(self.product_path):
+
                 # Получаем список файлов и папок в папке изделия
                 for item_name in os.listdir(self.product_path):
-                    item_path = os.path.join(
-                        self.product_path, item_name)  # Формируем путь к элементу
+                    item_path = os.path.join(self.product_path, item_name) # Формируем путь к элементу
 
-                    # Если это папка "рмп", обрабатываем ее содержимое
-                    if self.use_rmp_folder and item_name.lower() == "рмп" and os.path.isdir(item_path):
-                        # Получаем список файлов в папке "рмп"
+                    # Проверка на папку "рмп"
+                    if item_name.lower() == "рмп" and os.path.isdir(item_path):
                         for rmp_file_name in os.listdir(item_path):
                             rmp_file_path = os.path.join(item_path, rmp_file_name)
-                            # Проверяем, что это файл Excel
-                            if os.path.isfile(rmp_file_path) and rmp_file_path.lower().endswith(('.xlsx', '.xls')):
-                                semi_finished_products.append(rmp_file_path)
-                    # Иначе, если это файл Excel
-                    elif os.path.isfile(item_path) and item_path.lower().endswith(('.xlsx', '.xls')):
-                        semi_finished_products.append(item_path)
+
+                            add_file(rmp_file_path, semi_finished_products)
+
+                    else:
+                        add_file(item_path, semi_finished_products)
 
             return semi_finished_products
+        
         except:
             self.show_notification.emit("error", "Ошибка при получении списка полуфабрикатов.")
+            return []
 
     def get_product_materials(self, semi_finished_products):
         """Функция возвращает список материалов входящих в продукт."""
-        product_materials_dict = {}  # Используем словарь для быстрой проверки существования
+        product_materials_dict = {} # Используем словарь для быстрой проверки существования
 
         for semi_finished_product in semi_finished_products:
-            if os.path.exists(semi_finished_product):  # Если полуфабрикат существует
+            if os.path.exists(semi_finished_product): # Если полуфабрикат существует
                 try:
-                    # Определяем колонки для чтения
-                    columns_to_read = ['Номенклатура', 'Количество', 'Ед. изм.']
-                    # Читаем только нужные колонки из Excel файла
-                    df = pd.read_excel(semi_finished_product, sheet_name='TDSheet', usecols=columns_to_read)
-                    df = df.fillna('')  # Заменяем все NaN значения на пустые строки
+                    if self.use_rmp_folder == False and os.path.basename(os.path.dirname(semi_finished_product)).lower() == "рмп":
+                        continue
+                    else:
+                        # Определяем колонки для чтения
+                        columns_to_read = ['Номенклатура', 'Количество', 'Ед. изм.']
+                        # Читаем только нужные колонки из Excel файла
+                        df = pd.read_excel(semi_finished_product, sheet_name='TDSheet', usecols=columns_to_read)
+                        df = df.fillna('') # Заменяем все NaN значения на пустые строки
 
-                    # Преобразуем DataFrame в список словарей
-                    data_list = df.to_dict('records')
+                        # Преобразуем DataFrame в список словарей
+                        data_list = df.to_dict('records')
 
                     for new_item in data_list:
                         # Рассчитываем норму материалов на заданное количество
@@ -358,11 +365,19 @@ class Model(QObject):
                         # Проверяем находиться ли материал в блэклисте
                         in_blacklist = False
                         for word in self.materials_blacklist:
-                            if word.lower() in nomenclature.lower():
+                            if word.lower().strip() in nomenclature.lower().strip():
                                 in_blacklist = True
                                 break
                         
-                        if in_blacklist:
+                        # Проверяем находиться ли материал в спсике полуфабрикатов
+                        is_product = False
+                        semi_products_names = [os.path.splitext(os.path.basename(product))[0] for product in semi_finished_products]
+                        for product in semi_products_names:
+                            if product.lower().strip() in nomenclature.lower().strip():
+                                is_product = True
+                                break
+                        
+                        if in_blacklist or is_product:
                             continue
                         else:
                             # Если материал уже есть в словаре
