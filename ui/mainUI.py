@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'ui/mainUI.ui'
+# Form implementation generated from reading ui file 'ui/mainUi.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.11
 #
@@ -195,7 +195,7 @@ class Ui_MainWindow(object):
         font.setPointSize(12)
         self.norms_calculations_spinBox.setFont(font)
         self.norms_calculations_spinBox.setMaximum(999999)
-        self.norms_calculations_spinBox.setProperty("value", 1000)
+        self.norms_calculations_spinBox.setProperty("value", 1)
         self.norms_calculations_spinBox.setObjectName("norms_calculations_spinBox")
         self.horizontalLayout_2.addWidget(self.norms_calculations_spinBox)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
