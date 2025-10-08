@@ -136,7 +136,9 @@ class MainController:
         # Если окно ешё не открыто
         if self.document_window is None:
             # Создаём окно
-            self.document_window = create_document_window(self.model.current_product_materials)
+            self.document_window = create_document_window(product_name=self.model.current_product,
+                                                          norms_calculations_value=self.model.norms_calculations_value,
+                                                          materials=self.model.current_product_materials)
             self.document_window.show() # Показываем окно
             # Если окно было закрыто, вызываем отключение ссылки
             self.document_window.destroyed.connect(self.on_document_window_destroyed)
