@@ -51,7 +51,7 @@ class MainController:
         # Обработчики
         self.view.search_field_changed(self.on_search_field_changed) # Изменение текста в поле поиска
         self.view.clear_button_clicked(self.on_clear_button_clicked) # Нажатие кнопки очистки
-        self.view.export_button_clicked(self.on_export_button_clicked) # Нажатие кнопки экспорта
+        self.view.create_document_button_clicked(self.on_create_document_button_clicked) # Нажатие кнопки экспорта
         self.view.norms_calculations_changed(self.on_norms_calculations_changed) # Изменение нормы расчета
 
         # Сигналы
@@ -116,33 +116,36 @@ class MainController:
             product_materials = self.model.get_product_materials(semi_finished_products)
             self.model.current_product_materials = product_materials
             self.view.update_table_widget_data(data=product_materials)
-            self.view.update_export_button_state(enabled=True) # Изменяем состояние кнопки экспорта
+            self.view.update_create_document_button_state(enabled=True) # Изменяем состояние кнопки экспорта
         else:
             self.view.update_table_widget_data(data=[])
-            self.view.update_export_button_state(enabled=False)
+            self.view.update_create_document_button_state(enabled=False)
 
     def on_clear_button_clicked(self):
         """Функция обрабатывает нажатие кнопки очистки поля поиска."""
         self.view.clear_search_field() # Очищаем поле поиска
         self.view.update_clear_button_state(enabled=False) # Изменяем состояние кнопки очистки
 
-    def on_export_button_clicked(self):
-        """Функция обрабатывает нажатие кнопки экспорта, 
-        вызывая создание окна создания документов."""
+    def on_create_document_button_clicked(self):
+        """Функция обрабатывает нажатие кнопки экспорта, вызывая создание окна создания документов."""
+        # Проверка, выбрано ли изделие
         if not self.model.current_product_materials:
             self.show_notification("error", "Нет данных для экспорта.\nСначала выберите изделие.")
             return
 
+        # Если окно ешё не открыто
         if self.document_window is None:
+            # Создаём окно
             self.document_window = create_document_window(self.model.current_product_materials)
-            self.document_window.show()
+            self.document_window.show() # Показываем окно
+            # Если окно было закрыто, вызываем отключение ссылки
             self.document_window.destroyed.connect(self.on_document_window_destroyed)
-            self.view.update_export_button_state(enabled=False)
+            self.view.update_create_document_button_state(enabled=False) # Отключаем кнопку "Создать документ"
 
     def on_document_window_destroyed(self):
         """Функция обрабатывает закрытие окна документов."""
-        self.document_window = None
-        self.view.update_export_button_state(enabled=True)
+        self.document_window = None # Обнуляем ссылку
+        self.view.update_create_document_button_state(enabled=True) # Включаем кнопку "Создать документ"
         
     def on_norms_calculations_changed(self, value):
         """Функция обрабатывает изменение нормы расчета."""
