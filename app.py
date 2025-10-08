@@ -2,7 +2,7 @@ import sys
 
 from resources import resources_rc
 from ui.mainUI import Ui_MainWindow
-from mvc import Model, View, Controller
+from mvc import MainModel, MainView, MainController
 
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QApplication
@@ -19,10 +19,10 @@ class MyWindow(QMainWindow):
         icon = QIcon(":/icons/icon.ico")
         self.setWindowIcon(icon)
 
-        # MVC Initialization
-        self.model = Model()
-        self.view = View(ui=self.main_ui)
-        self.controller = Controller(model=self.model, view=self.view)
+        # Инициализация архитектуры MVC главного окна приложения
+        self.main_model = MainModel()
+        self.main_view = MainView(ui=self.main_ui)
+        self.main_controller = MainController(model=self.main_model, view=self.main_view)
 
 if __name__ == "__main__":
         app = QApplication(sys.argv)

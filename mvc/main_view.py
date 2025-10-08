@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QCompleter, QTableWidgetItem, QHeaderView
 
 
-class View:
+class MainView:
     def __init__(self, ui):
         self.ui = ui
 
@@ -15,28 +15,10 @@ class View:
     def get_search_field_text(self):
         """Функция возвращает текст из поля поиска."""
         return self.ui.search_line_lineEdit.text()
-    
-    def get_save_path(self):
-        """Функция возвращает путь к папке для сохранения."""
-        return self.ui.save_file_path_line_lineEdit.text()
-
-    def get_export_format(self):
-        """Функция возвращает выбраный формат для экспорта."""
-        if self.ui.export_formats_excel_radioButton.isChecked():
-            return "xlsx"
-        elif self.ui.export_formats_word_radioButton.isChecked():
-            return "docx"
-        elif self.ui.export_formats_pdf_radioButton.isChecked():
-            return "pdf"
-        return None # Возвращаем None, если ничего не выбрано
 
     def clear_search_field(self):
         """Функция очищает поле поиска."""
         self.ui.search_line_lineEdit.clear()
-
-    def set_save_folder_path(self, path):
-        """Функция устанавливает путь к папке для сохранения."""
-        self.ui.save_file_path_line_lineEdit.setText(path)
 
     def set_search_completer(self, model):
         """Функция устанавливает QCompleter для поля поиска."""
@@ -49,15 +31,6 @@ class View:
     def get_search_line_edit(self):
         """Возвращает виджет QLineEdit для поиска."""
         return self.ui.search_line_lineEdit
-
-    def set_progress_bar_value(self, value):
-        """Функция устанавливает значение в прогресс баре."""
-        self.ui.progressBar.setValue(value)
-
-    def set_progerss_bar_labels_text(self, text, value):
-        """Функция устанавливает текст в лейблах в прогресс бара."""
-        self.ui.progress_bar_labels_process_label.setText(text)
-        self.ui.progress_bar_labels_percents_label.setText(f"{value}%")
 
     def update_clear_button_state(self, enabled):
         """Функция обновляет состояние кнопки очистки поля поиска."""
@@ -98,10 +71,6 @@ class View:
     def clear_button_clicked(self, handler):
         """Функция вызывает обработчик при нажатии кнопки очистки поля поиска."""
         self.ui.search_line_clear_pushButton.clicked.connect(handler)
-
-    def choose_save_folder_path(self, handler):
-        """Функция вызывает обработчик при нажатии кнопки выбора папки для сохранения."""
-        self.ui.save_file_path_line_choose_pushButton.clicked.connect(handler)
 
     def export_button_clicked(self, handler):
         """Функция вызывает обработчик при нажатии кнопки экспорта."""
