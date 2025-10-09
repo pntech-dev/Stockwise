@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>866</width>
-    <height>615</height>
+    <height>756</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -1281,21 +1281,16 @@ QCheckBox::indicator {
         </widget>
        </item>
        <item>
-        <widget class="QFrame" name="document_type_frame">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-          </font>
-         </property>
+        <widget class="QFrame" name="frame">
          <property name="frameShape">
           <enum>QFrame::StyledPanel</enum>
          </property>
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_14">
+         <layout class="QVBoxLayout" name="verticalLayout">
           <property name="spacing">
-           <number>16</number>
+           <number>8</number>
           </property>
           <property name="leftMargin">
            <number>0</number>
@@ -1310,47 +1305,85 @@ QCheckBox::indicator {
            <number>0</number>
           </property>
           <item>
-           <widget class="QCheckBox" name="report_checkBox">
+           <widget class="QLabel" name="label">
             <property name="font">
              <font>
               <pointsize>12</pointsize>
              </font>
             </property>
             <property name="text">
-             <string>Докладная</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
+             <string>Выберите вид документа:</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="bid_checkBox">
+           <widget class="QFrame" name="document_type_frame">
             <property name="font">
              <font>
               <pointsize>12</pointsize>
              </font>
             </property>
-            <property name="text">
-             <string>Заявка</string>
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
             </property>
-            <property name="checked">
-             <bool>true</bool>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
             </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_14">
+             <property name="spacing">
+              <number>16</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QRadioButton" name="radioButton">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Докладная</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="radioButton_2">
+               <property name="font">
+                <font>
+                 <pointsize>12</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Заявка</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_7">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_7">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
           </item>
          </layout>
         </widget>
