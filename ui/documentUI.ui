@@ -111,16 +111,87 @@ QProgressBar[error=&quot;true&quot;]::chunk {
     background-color: #EF4444;
 }
 
-QCheckBox {
-    color: #1F2937;
-    spacing: 4px;
-    border-radius: 6px; /* округленные углы */
+QDateEdit {
+    background-color: #FFFFFF;
+    color: #111827;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    padding: 4px 8px;
+    min-height: 26px;
 }
 
-QCheckBox::indicator {
-    width: 14px;
-    height: 14px;
-}</string>
+QDateEdit:hover {
+    border-color: #9CA3AF;
+    background-color: #F9FAFB;
+}
+
+QDateEdit:focus {
+    border: 2px solid #2563EB;
+    background-color: #FFFFFF;
+}
+
+/* Кнопка раскрытия календаря */
+QDateEdit::drop-down {
+    subcontrol-origin: border;
+    subcontrol-position: right center;
+    width: 26px;
+
+    /* Единый контур с полем */
+    border-left: 1px solid #D1D5DB;
+    border-top: 1px solid #D1D5DB;
+    border-right: 1px solid #D1D5DB;
+    border-bottom: 1px solid #D1D5DB;
+
+    /* Скругления только справа */
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+
+    background-color: #F3F4F6;
+    padding: 0;
+}
+
+/* Hover по кнопке */
+QDateEdit::drop-down:hover {
+    background-color: #E5E7EB;
+    border-color: #9CA3AF;
+}
+
+/* При фокусе — общий акцент синим */
+QDateEdit:focus QDateEdit::drop-down {
+    border-color: #2563EB;
+}
+
+/* Стрелка — центр */
+QDateEdit::down-arrow {
+    subcontrol-origin: content;
+    subcontrol-position: center;
+    image: url(:/icons/arrow_down.svg);
+    width: 10px;
+    height: 10px;
+    margin: 0;
+    padding: 0;
+}
+
+/* Hover стрелки */
+QDateEdit::drop-down:hover QDateEdit::down-arrow {
+    image: url(:/icons/arrow_down.svg);
+    opacity: 0.8;
+}
+
+/* Disabled */
+QDateEdit:disabled {
+    color: #9CA3AF;
+    background-color: #F3F4F6;
+    border-color: #E5E7EB;
+}
+QDateEdit::drop-down:disabled {
+    background-color: #E5E7EB;
+    border-color: #E5E7EB;
+}
+QDateEdit::down-arrow:disabled {
+    opacity: 0.4;
+}
+</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_12">
@@ -285,7 +356,7 @@ QCheckBox::indicator {
             <property name="minimumSize">
              <size>
               <width>138</width>
-              <height>30</height>
+              <height>36</height>
              </size>
             </property>
             <property name="maximumSize">
@@ -298,6 +369,9 @@ QCheckBox::indicator {
              <font>
               <pointsize>12</pointsize>
              </font>
+            </property>
+            <property name="styleSheet">
+             <string notr="true"/>
             </property>
             <property name="dateTime">
              <datetime>
