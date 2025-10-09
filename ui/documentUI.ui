@@ -445,7 +445,7 @@ QDateEdit::down-arrow:disabled {
         <number>16</number>
        </property>
        <item>
-        <widget class="QFrame" name="ku_signature_frame">
+        <widget class="QFrame" name="from_signature_frame">
          <property name="frameShape">
           <enum>QFrame::StyledPanel</enum>
          </property>
@@ -469,7 +469,7 @@ QDateEdit::down-arrow:disabled {
            <number>0</number>
           </property>
           <item>
-           <widget class="QLabel" name="ku_label">
+           <widget class="QLabel" name="from_label">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -488,7 +488,7 @@ QDateEdit::down-arrow:disabled {
            </widget>
           </item>
           <item>
-           <widget class="QFrame" name="ku_actions_frame">
+           <widget class="QFrame" name="from_actions_frame">
             <property name="frameShape">
              <enum>QFrame::StyledPanel</enum>
             </property>
@@ -512,7 +512,7 @@ QDateEdit::down-arrow:disabled {
               <number>0</number>
              </property>
              <item>
-              <widget class="QFrame" name="ku_position_frame">
+              <widget class="QFrame" name="from_position_frame">
                <property name="frameShape">
                 <enum>QFrame::StyledPanel</enum>
                </property>
@@ -536,7 +536,7 @@ QDateEdit::down-arrow:disabled {
                  <number>0</number>
                 </property>
                 <item>
-                 <widget class="QLabel" name="ku_position_label">
+                 <widget class="QLabel" name="from_position_label">
                   <property name="font">
                    <font>
                     <family>MS Shell Dlg 2</family>
@@ -549,7 +549,7 @@ QDateEdit::down-arrow:disabled {
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLineEdit" name="ku_position_lineEdit">
+                 <widget class="QLineEdit" name="from_position_lineEdit">
                   <property name="minimumSize">
                    <size>
                     <width>0</width>
@@ -579,7 +579,7 @@ QDateEdit::down-arrow:disabled {
               </widget>
              </item>
              <item>
-              <widget class="QFrame" name="ku_fio_frame">
+              <widget class="QFrame" name="from_fio_frame">
                <property name="frameShape">
                 <enum>QFrame::StyledPanel</enum>
                </property>
@@ -603,7 +603,7 @@ QDateEdit::down-arrow:disabled {
                  <number>0</number>
                 </property>
                 <item>
-                 <widget class="QLabel" name="ku_fio_label">
+                 <widget class="QLabel" name="from_fio_label">
                   <property name="font">
                    <font>
                     <family>MS Shell Dlg 2</family>
@@ -616,7 +616,7 @@ QDateEdit::down-arrow:disabled {
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLineEdit" name="ku_fio_lineEdit">
+                 <widget class="QLineEdit" name="from_fio_lineEdit">
                   <property name="minimumSize">
                    <size>
                     <width>0</width>
@@ -652,7 +652,7 @@ QDateEdit::down-arrow:disabled {
         </widget>
        </item>
        <item>
-        <widget class="QFrame" name="ceh_signature_frame">
+        <widget class="QFrame" name="whom_signature_frame">
          <property name="frameShape">
           <enum>QFrame::StyledPanel</enum>
          </property>
@@ -676,7 +676,7 @@ QDateEdit::down-arrow:disabled {
            <number>0</number>
           </property>
           <item>
-           <widget class="QLabel" name="ceh_label">
+           <widget class="QLabel" name="whom_label">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -695,7 +695,7 @@ QDateEdit::down-arrow:disabled {
            </widget>
           </item>
           <item>
-           <widget class="QFrame" name="ceh_actions_frame">
+           <widget class="QFrame" name="whom_actions_frame">
             <property name="frameShape">
              <enum>QFrame::StyledPanel</enum>
             </property>
@@ -719,7 +719,7 @@ QDateEdit::down-arrow:disabled {
               <number>0</number>
              </property>
              <item>
-              <widget class="QFrame" name="ceh_position_frame">
+              <widget class="QFrame" name="whom_position_frame">
                <property name="frameShape">
                 <enum>QFrame::StyledPanel</enum>
                </property>
@@ -743,7 +743,7 @@ QDateEdit::down-arrow:disabled {
                  <number>0</number>
                 </property>
                 <item>
-                 <widget class="QLabel" name="ceh_position_label">
+                 <widget class="QLabel" name="whom_position_label">
                   <property name="font">
                    <font>
                     <family>MS Shell Dlg 2</family>
@@ -756,7 +756,7 @@ QDateEdit::down-arrow:disabled {
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLineEdit" name="ceh_position_lineEdit">
+                 <widget class="QLineEdit" name="whom_position_lineEdit">
                   <property name="minimumSize">
                    <size>
                     <width>0</width>
@@ -786,7 +786,7 @@ QDateEdit::down-arrow:disabled {
               </widget>
              </item>
              <item>
-              <widget class="QFrame" name="ceh_fio_frame">
+              <widget class="QFrame" name="whom_fio_frame">
                <property name="frameShape">
                 <enum>QFrame::StyledPanel</enum>
                </property>
@@ -810,7 +810,7 @@ QDateEdit::down-arrow:disabled {
                  <number>0</number>
                 </property>
                 <item>
-                 <widget class="QLabel" name="ceh_fio_label">
+                 <widget class="QLabel" name="whom_fio_label">
                   <property name="font">
                    <font>
                     <family>MS Shell Dlg 2</family>
@@ -823,7 +823,7 @@ QDateEdit::down-arrow:disabled {
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLineEdit" name="ceh_fio_lineEdit">
+                 <widget class="QLineEdit" name="whom_fio_lineEdit">
                   <property name="minimumSize">
                    <size>
                     <width>0</width>

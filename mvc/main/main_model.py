@@ -13,8 +13,6 @@ class MainModel(QObject):
 
         self.program_version_number = None # Версия программы
         self.program_server_path = None # Путь к программе на сервере
-        # self.use_rmp_folder = False # Использовать папку "РМП"
-        # self.materials_blacklist = [] # Список материалов, с которым сверяются добавляемые материалы
         self.path_to_products_folder = None
         self.is_products_folder_available = False
         self.__load_config()  # Загружаем конфигурацию при инициализации
@@ -23,6 +21,7 @@ class MainModel(QObject):
         self.update_products_names()  # Обновляем список названий изделий
 
         self.current_product = ""  # Текущее выбранное изделие
+        self.current_product_path = ""  # Путь к текущему продукту
         self.current_product_materials = []  # Список материалов текущего изделия
 
         self.norms_calculations_value = 1 # Значение на которое рассчитываются нормы изделия
@@ -43,8 +42,6 @@ class MainModel(QObject):
         # Записываем данные из файла кофигурации
         self.program_version_number = config["program_version_number"]
         self.program_server_path = config["server_program_path"]
-        self.use_rmp_folder = config.get("use_rmp_folder", False)
-        self.materials_blacklist = config.get("blacklist", [])
 
         path = config["path_to_products_folder"]
         if os.path.exists(path) and os.path.isdir(path):
@@ -68,6 +65,7 @@ class MainModel(QObject):
 
             # Если путь к папке изделия существует
             if os.path.exists(self.product_path) and os.path.isdir(self.product_path):
+                self.current_product_path = self.product_path
 
                 # Получаем список файлов и папок в папке изделия
                 for item_name in os.listdir(self.product_path):
@@ -108,10 +106,7 @@ class MainModel(QObject):
                     data_list = df.to_dict('records')
 
                     for new_item in data_list:
-                        if is_rmp_folder:
-                            new_item['РМП'] = True
-                        else:
-                            new_item['РМП'] = False
+                        new_item['РМП'] = is_rmp_folder # Отмечаем какие материалы из папки РМП
 
                         # Рассчитываем норму на еденицу по умолчанию
                         new_item['Количество'] = new_item['Количество'] / 1000
