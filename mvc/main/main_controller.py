@@ -138,7 +138,8 @@ class MainController:
             # Создаём окно
             self.document_window = create_document_window(product_name=self.model.current_product,
                                                           norms_calculations_value=self.model.norms_calculations_value,
-                                                          materials=self.model.current_product_materials)
+                                                          materials=self.model.current_product_materials,
+                                                          path_to_products_folder=self.model.path_to_products_folder)
             self.document_window.show() # Показываем окно
             # Если окно было закрыто, вызываем отключение ссылки
             self.document_window.destroyed.connect(self.on_document_window_destroyed)
