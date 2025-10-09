@@ -62,6 +62,16 @@ class DocumentModel:
             # self.show_notification.emit("error", "Указанный путь к папке изделий не существует или не является папкой.")
             return
         
+    def __get_document_materials_list(self):
+        """Функция возвращает список материалов для докладной записки."""
+        self.current_materials = []
+
+        for item in self.materials:
+            if item['Ед. изм.'] != "шт" and not item["РМП"]:
+                self.current_materials.append(item)
+
+        return self.current_materials
+        
     def __export_to_excel(self, document_type, save_folder_path):
         """Функция обрабатывает экспорт в Excel."""
         context = {
@@ -86,6 +96,12 @@ class DocumentModel:
                         cell.value = template.render(context)
 
             wb.save(os.path.join(save_folder_path, "test_document.xlsx"))
+
+            # =============
+
+            materials_list = self.__get_document_materials_list()
+            for i in materials_list:
+                print(i)
 
         elif document_type == "bid": # Если документ - Заявка (ПДС)
             wb = load_workbook("templates/bid.xlsx")
