@@ -23,7 +23,6 @@ class DocumentModel:
         self.signature_from_position = [] # Должность от кого
         self.signature_whom_human = [] # Подпсиь кому
         self.signature_whom_position = [] # Должность кому
-        self.__load_config() # Загружаем конфигурацию при инициализации
 
         # Данные для подстановки в документ
         self.outgoing_number = "" # Номер исходящего документа
@@ -34,6 +33,11 @@ class DocumentModel:
         self.whom_fio = "" # ФИО кому
         self.from_position = "" # Должность от кого
         self.from_fio = "" # ФИО от кого
+
+        # Black и White листы
+        self.bid_blacklist = []
+
+        self.__load_config() # Загружаем конфигурацию при инициализации
 
     def __load_config(self):
         """Функция загружает конфигурацию из файла config.yaml."""
@@ -64,6 +68,13 @@ class DocumentModel:
             print("Ошибка, Указанный путь к папке изделий не существует или не является папкой.")
             # self.show_notification.emit("error", "Указанный путь к папке изделий не существует или не является папкой.")
             return
+                
+        bid_blacklist = config.get("bid_blacklist")
+        if bid_blacklist:
+            self.bid_blacklist = bid_blacklist
+        else:
+            print("Ошибка при чтении блэклиста заявок")
+            return
         
     def __get_document_materials_list(self):
         """Функция возвращает список материалов для докладной записки."""
@@ -80,8 +91,15 @@ class DocumentModel:
         self.current_materials = []
 
         for item in self.materials:
-            if not item['РМП'] and item['Ед. изм.'] == "шт":
-                self.current_materials.append(item)
+            if item['РМП'] or item['Ед. изм.'] == "шт":
+                # Проверяем находиться ли материал в блэклисте
+                in_blacklist = False
+                if any(word.lower() in item['Номенклатура'].lower() for word in self.bid_blacklist):
+                    in_blacklist = True
+
+                # Если материал не в блэклисте, добавляем его
+                if not in_blacklist:
+                    self.current_materials.append(item)
 
         return self.current_materials
     
