@@ -7,7 +7,7 @@ from .document_controller import DocumentController
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtCore import Qt
 
-def create_document_window(product_name, norms_calculations_value, materials):
+def create_document_window(product_name, norms_calculations_value, materials, path_to_products_folder):
     """Создает, настраивает и возвращает экземпляр окна "Документ" с его MVC стеком."""
     window = QMainWindow()
     
