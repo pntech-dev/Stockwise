@@ -4,3 +4,4 @@ PyYAML
 openpyxl
 python-docx
 reportlab
+jinja2

@@ -1,14 +1,17 @@
 import os
 import yaml
+import threading
 
 from PyQt5.QtCore import QDate
 
+# Excel экспорт
+from jinja2 import Template
+from openpyxl import load_workbook
 
 class DocumentModel:
     def __init__(self, product_name, norms_calculations_value, materials, current_product_path):
         # Данные из основного окна приложения
         self.product_name = product_name
-        self.quantity = norms_calculations_value
         self.materials = materials
         self.current_product_path = current_product_path
 
@@ -19,8 +22,15 @@ class DocumentModel:
         self.signature_whom_position = [] # Должность кому
         self.__load_config() # Загружаем конфигурацию при инициализации
 
-        # Определяем имя текущего изделия
-        self.current_product_name = self.get_current_product_name()
+        # Данные для подстановки в документ
+        self.outgoing_number = "" # Номер исходящего документа
+        self.current_date = "" # Текущая дата
+        self.product_name = self.get_current_product_name() # Определяем имя текущего изделия
+        self.quantity = norms_calculations_value
+        self.whom_position = "" # Должность кому
+        self.whom_fio = "" # ФИО кому
+        self.from_position = "" # Должность от кого
+        self.from_fio = "" # ФИО от кого
 
     def __load_config(self):
         """Функция загружает конфигурацию из файла config.yaml."""
@@ -52,6 +62,31 @@ class DocumentModel:
             # self.show_notification.emit("error", "Указанный путь к папке изделий не существует или не является папкой.")
             return
         
+    def __export_to_excel(self, document_type, save_folder_path):
+        """Функция обрабатывает экспорт в Excel."""
+        context = {
+                "outgoing_number": self.outgoing_number,
+                "current_date": self.current_date,
+                "whom_position": self.whom_position,
+                "whom_fio": self.whom_fio,
+                "product_name": self.product_name,
+                "product_quantity": self.quantity,
+                "from_position": self.from_position,
+                "from_fio": self.from_fio,
+            }
+
+        if document_type == "document": # Если документ - Докладная записка (Цех)
+            wb = load_workbook("templates/document.xlsx")
+            ws = wb.active
+
+            for row in ws.iter_rows():
+                for cell in row:
+                    if isinstance(cell.value, str) and "{{" in cell.value:
+                        template = Template(cell.value)
+                        cell.value = template.render(context)
+
+            wb.save(os.path.join(save_folder_path, "test.xlsx"))
+
     def get_current_date(self):
         """Функция возвращает текущую дату."""
         return QDate.currentDate()
@@ -78,11 +113,12 @@ class DocumentModel:
                 print(f"Произошла ошибка при получении пути к папке Desktop: {e}")
                 return
 
-        if document_type[0]:
-            print("Экспорт докладной записки")
-            print(f"Формат экспорта: {export_format}")
-            print(f"Путь к папке сохранения: {save_folder_path}")
-        elif document_type[1]:
-            print("Экспорт заявки")
-            print(f"Формат экспорта: {export_format}")
-            print(f"Путь к папке сохранения: {save_folder_path}")
+        try:
+            thread = threading.Thread(target=self.__export_to_excel, args=(document_type, save_folder_path,))
+            thread.daemon = True
+            thread.start()
+            return thread
+        
+        except Exception as e:
+            print(f"Произошла ошибка во время запуска потока экспорта документа: {e}")
+            return

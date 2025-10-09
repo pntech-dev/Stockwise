@@ -28,6 +28,31 @@ class DocumentView:
             return "pdf"
         else:
             return None
+        
+    def get_outgoing_number(self):
+        """Функция возвращает номер исходящего документа."""
+        return self.ui.number_lineEdit.text()
+    
+    def get_date(self):
+        """Функция возвращает дату."""
+        print(self.ui.date_dateEdit.date())
+        return self.ui.date_dateEdit.date()
+    
+    def get_whom_position(self):
+        """Функция возвращает должность кому."""
+        return self.ui.whom_position_lineEdit.text()
+
+    def get_whom_fio(self):
+        """Функция возвращает ФИО кому."""
+        return self.ui.whom_fio_lineEdit.text()
+
+    def get_from_position(self):
+        """Функция возвращает должность от кого."""
+        return self.ui.from_position_lineEdit.text()
+
+    def get_from_fio(self):
+        """Функция возвращает ФИО от кого."""
+        return self.ui.from_fio_lineEdit.text()
 
     def set_product_nomenclature_lineedit(self, product_nomenclature):
         """Функция устанавливает значение поля номенклатуры изделия."""
@@ -67,3 +92,27 @@ class DocumentView:
     def export_button_clicked(self, handler):
         """Функция устанавливает обработчик нажатия кнопки экспорта."""
         self.ui.export_pushButton.clicked.connect(handler)
+
+    def outgoing_number_lineedit_text_changed(self, handler):
+        """Функция устанавливает обработчик изменения текста в поле номера исходящего документа."""
+        self.ui.number_lineEdit.textChanged.connect(handler)    
+
+    def date_dateedit_changed(self, handler):
+        """Функция устанавливает обработчик изменения даты."""
+        self.ui.date_dateEdit.dateChanged.connect(handler)
+
+    def from_position_lineedit_text_changed(self, handler):
+        """Функция устанавливает обработчик изменения текста в поле должности от кого."""
+        self.ui.from_position_lineEdit.textChanged.connect(handler)
+
+    def from_fio_lineedit_text_changed(self, handler):
+        """Функция устанавливает обработчик изменения текста в поле ФИО от кого."""
+        self.ui.from_fio_lineEdit.textChanged.connect(handler)
+
+    def whom_position_lineedit_text_changed(self, handler):
+        """Функция устанавливает обработчик изменения текста в поле должности кому."""
+        self.ui.whom_position_lineEdit.textChanged.connect(handler)
+        
+    def whom_fio_lineedit_text_changed(self, handler):
+        """Функция устанавливает обработчик изменения текста в поле ФИО кому."""
+        self.ui.whom_fio_lineEdit.textChanged.connect(handler)
