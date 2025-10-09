@@ -1355,7 +1355,7 @@ QDateEdit::down-arrow:disabled {
         </widget>
        </item>
        <item>
-        <widget class="QFrame" name="frame">
+        <widget class="QFrame" name="document_type_frame_2">
          <property name="frameShape">
           <enum>QFrame::StyledPanel</enum>
          </property>
@@ -1420,7 +1420,7 @@ QDateEdit::down-arrow:disabled {
               <number>0</number>
              </property>
              <item>
-              <widget class="QRadioButton" name="radioButton">
+              <widget class="QRadioButton" name="document_radioButton">
                <property name="font">
                 <font>
                  <pointsize>12</pointsize>
@@ -1432,7 +1432,7 @@ QDateEdit::down-arrow:disabled {
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_2">
+              <widget class="QRadioButton" name="bid_radioButton">
                <property name="font">
                 <font>
                  <pointsize>12</pointsize>
