@@ -1,3 +1,6 @@
+from PyQt5.QtWidgets import QFileDialog 
+
+
 class DocumentController:
     def __init__(self, model, view):
         self.model = model
@@ -6,6 +9,11 @@ class DocumentController:
         self.__set_lineedits() # Вызываем автоматическое заполнение полей ввода
         self.__set_completers() # Вызываем установку комплитеров
         self.__set_dateedit() # Вызываем установку текущей даты
+
+        # Обработчики
+        self.view.choose_save_file_path_button_clicked(self.on_choose_save_file_path_button_clicked) # Нажатие кнопки выбора пути сохранения файла
+        self.view.document_type_radiobutton_clicked(self.on_document_type_radiobutton_clicked) # Изменение типа документа
+        self.view.export_button_clicked(self.export_button_clicked) # Нажатие кнопки экспорта
 
     def __set_lineedits(self):
         """Функция автоматического заполнения полей ввода."""
@@ -30,3 +38,18 @@ class DocumentController:
     def __set_dateedit(self):
         """Функция устанавливает текущую дату в поле даты."""
         self.view.set_current_date(date=self.model.get_current_date())
+
+    def on_choose_save_file_path_button_clicked(self):
+        """Функция обрабатывает нажатие кнопки выбора пути сохранения файла."""
+        folder_path = QFileDialog.getExistingDirectory() # Получаем путь к папке
+
+        if folder_path: # Если путь получен
+            self.view.set_save_folder_path(path=folder_path) # Записываем путь в QLineEdit
+
+    def on_document_type_radiobutton_clicked(self):
+        """Функция обрабатывает изменение типа документа."""
+        self.view.set_export_button_state(True)
+
+    def export_button_clicked(self):
+        """Функция обрабатывает нажатие кнопки экспорта."""
+        print("Экспорт")
