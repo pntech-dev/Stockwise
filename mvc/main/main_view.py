@@ -6,7 +6,7 @@ class MainView:
         self.ui = ui
 
         # Настройки таблицы
-        headers = ['Номенклатура', 'Количество', 'Ед. изм.', 'Изделие'] # Заголовки таблицы
+        headers = ['Номенклатура', 'Количество', 'Ед. изм.'] # Заголовки таблицы
         self.ui.data_tableWidget.setColumnCount(len(headers)) # Устанавливаем количество столбцов
         self.ui.data_tableWidget.setHorizontalHeaderLabels(headers) # Устанавливаем заголовки столбцов
         header = self.ui.data_tableWidget.horizontalHeader() # Получаем заголовок
@@ -55,10 +55,6 @@ class MainView:
             # Устанавливаем данные в клонку "Ед. изм."
             unit_item = QTableWidgetItem(item.get('Ед. изм.', ''))
             self.ui.data_tableWidget.setItem(row_index, 2, unit_item)
-
-            # Устанавливаем данные в колонку "Изделие"
-            product_item = QTableWidgetItem(", ".join(item.get('Изделие', '')))
-            self.ui.data_tableWidget.setItem(row_index, 3, product_item)
 
     def update_create_document_button_state(self, enabled):
         """Функция обновляет состояние кнопки экспорта."""

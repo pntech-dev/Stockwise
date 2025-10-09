@@ -13,9 +13,8 @@ class MainModel(QObject):
 
         self.program_version_number = None # Версия программы
         self.program_server_path = None # Путь к программе на сервере
-        self.use_rmp_folder = False # Использовать папку "РМП"
-        self.materials_blacklist = [] # Список материалов, с которым сверяются добавляемые материалы
-
+        # self.use_rmp_folder = False # Использовать папку "РМП"
+        # self.materials_blacklist = [] # Список материалов, с которым сверяются добавляемые материалы
         self.path_to_products_folder = None
         self.is_products_folder_available = False
         self.__load_config()  # Загружаем конфигурацию при инициализации
@@ -97,19 +96,23 @@ class MainModel(QObject):
         for semi_finished_product in semi_finished_products:
             if os.path.exists(semi_finished_product): # Если полуфабрикат существует
                 try:
-                    if self.use_rmp_folder == False and os.path.basename(os.path.dirname(semi_finished_product)).lower() == "рмп":
-                        continue
-                    else:
-                        # Определяем колонки для чтения
-                        columns_to_read = ['Номенклатура', 'Количество', 'Ед. изм.']
-                        # Читаем только нужные колонки из Excel файла
-                        df = pd.read_excel(semi_finished_product, sheet_name='TDSheet', usecols=columns_to_read)
-                        df = df.fillna('') # Заменяем все NaN значения на пустые строки
+                    is_rmp_folder = os.path.basename(os.path.dirname(semi_finished_product)).lower() == "рмп"
 
-                        # Преобразуем DataFrame в список словарей
-                        data_list = df.to_dict('records')
+                    # Определяем колонки для чтения
+                    columns_to_read = ['Номенклатура', 'Количество', 'Ед. изм.']
+                    # Читаем только нужные колонки из Excel файла
+                    df = pd.read_excel(semi_finished_product, sheet_name='TDSheet', usecols=columns_to_read)
+                    df = df.fillna('') # Заменяем все NaN значения на пустые строки
+
+                    # Преобразуем DataFrame в список словарей
+                    data_list = df.to_dict('records')
 
                     for new_item in data_list:
+                        if is_rmp_folder:
+                            new_item['РМП'] = True
+                        else:
+                            new_item['РМП'] = False
+
                         # Рассчитываем норму на еденицу по умолчанию
                         new_item['Количество'] = new_item['Количество'] / 1000
 
@@ -118,15 +121,7 @@ class MainModel(QObject):
                             new_item['Количество'] = new_item['Количество'] * self.norms_calculations_value
 
                         nomenclature = new_item['Номенклатура']
-                        product_name = os.path.splitext(
-                            os.path.basename(semi_finished_product))[0]
-                        
-                        # Проверяем находиться ли материал в блэклисте
-                        in_blacklist = False
-                        for word in self.materials_blacklist:
-                            if word.lower().strip() in nomenclature.lower().strip():
-                                in_blacklist = True
-                                break
+                        product_name = os.path.splitext(os.path.basename(semi_finished_product))[0]
                         
                         # Проверяем находиться ли материал в спсике полуфабрикатов
                         is_product = False
@@ -136,27 +131,22 @@ class MainModel(QObject):
                                 is_product = True
                                 break
                         
-                        if in_blacklist or is_product:
+                        if is_product:
                             continue
                         else:
-                            # Если материал уже есть в словаре
+                            # Проверяем, есть ли материал в словаре
                             if nomenclature in product_materials_dict:
                                 existing_item = product_materials_dict[nomenclature]
                                 # Увеличиваем количество
                                 existing_item['Количество'] += new_item['Количество']
-
-                                # Если название изделия не найдено в списке изделий
-                                if product_name not in existing_item['Изделие']:
-                                    # Добавляем название изделия в список изделий
-                                    existing_item['Изделие'].append(product_name)
                             else:
-                                # Если материал не найден, добавляем его в словарь
-                                new_item['Изделие'] = [product_name]
                                 product_materials_dict[nomenclature] = new_item
+
                 except Exception as e:
                     self.show_notification.emit("error", f"Ошибка при чтении файла {semi_finished_product}: {e}")
             else:
                 self.show_notification.emit("error", f"Файл {semi_finished_product} не найден.")
+
         return list(product_materials_dict.values())
 
     def check_program_version(self):
