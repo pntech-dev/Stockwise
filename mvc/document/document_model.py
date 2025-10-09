@@ -71,6 +71,16 @@ class DocumentModel:
                 self.current_materials.append(item)
 
         return self.current_materials
+    
+    def __get_bid_materials_list(self):
+        """Функция возвращает список материалов для заявки."""
+        self.current_materials = []
+
+        for item in self.materials:
+            if not item['РМП'] and item['Ед. изм.'] == "шт":
+                self.current_materials.append(item)
+
+        return self.current_materials
         
     def __export_to_excel(self, document_type, save_folder_path):
         """Функция обрабатывает экспорт в Excel."""
@@ -114,6 +124,12 @@ class DocumentModel:
                         cell.value = template.render(context)
 
             wb.save(os.path.join(save_folder_path, "test_bid.xlsx"))
+
+            # =============
+
+            materials_list = self.__get_bid_materials_list()
+            for i in materials_list:
+                print(i)
 
     def get_current_date(self):
         """Функция возвращает текущую дату."""
