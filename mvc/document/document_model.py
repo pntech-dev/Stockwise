@@ -85,7 +85,19 @@ class DocumentModel:
                         template = Template(cell.value)
                         cell.value = template.render(context)
 
-            wb.save(os.path.join(save_folder_path, "test.xlsx"))
+            wb.save(os.path.join(save_folder_path, "test_document.xlsx"))
+
+        elif document_type == "bid": # Если документ - Заявка (ПДС)
+            wb = load_workbook("templates/bid.xlsx")
+            ws = wb.active
+
+            for row in ws.iter_rows():
+                for cell in row:
+                    if isinstance(cell.value, str) and "{{" in cell.value:
+                        template = Template(cell.value)
+                        cell.value = template.render(context)
+
+            wb.save(os.path.join(save_folder_path, "test_bid.xlsx"))
 
     def get_current_date(self):
         """Функция возвращает текущую дату."""

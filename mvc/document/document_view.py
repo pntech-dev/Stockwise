@@ -35,7 +35,6 @@ class DocumentView:
     
     def get_date(self):
         """Функция возвращает дату."""
-        print(self.ui.date_dateEdit.date())
         return self.ui.date_dateEdit.date()
     
     def get_whom_position(self):
