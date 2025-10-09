@@ -5,6 +5,30 @@ class DocumentView:
     def __init__(self, ui):
         self.ui = ui
 
+    def get_save_folder_path(self):
+        """Функция возвращает путь к папке сохранения файла."""
+        return self.ui.save_file_path_line_lineEdit.text()
+
+    def get_selected_document_type(self):
+        """Функция возвращает выбранный тип документа."""
+        if self.ui.document_radioButton.isChecked():
+            return "document"
+        elif self.ui.bid_radioButton.isChecked():
+            return "bid"
+        else:
+            return None
+    
+    def get_export_format(self):
+        """Функция возвращает формат экспорта."""
+        if self.ui.export_formats_excel_radioButton.isChecked():
+            return "excel"
+        elif self.ui.export_formats_word_radioButton.isChecked():
+            return "word"
+        elif self.ui.export_formats_pdf_radioButton.isChecked():
+            return "pdf"
+        else:
+            return None
+
     def set_product_nomenclature_lineedit(self, product_nomenclature):
         """Функция устанавливает значение поля номенклатуры изделия."""
         self.ui.product_nomenclature_lineEdit.setText(product_nomenclature)

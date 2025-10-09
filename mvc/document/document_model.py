@@ -68,3 +68,21 @@ class DocumentModel:
                         return os.path.splitext(file)[0]
                     
         return self.product_name
+    
+    def export_in_thread(self, document_type, save_folder_path, export_format="excel"):
+        """Функция запускает процесс экспорта документа в отдельном потоке."""
+        if len(save_folder_path) == 0:
+            try:
+                save_folder_path = os.path.join(os.path.expanduser("~"), "Desktop")
+            except Exception as e:
+                print(f"Произошла ошибка при получении пути к папке Desktop: {e}")
+                return
+
+        if document_type[0]:
+            print("Экспорт докладной записки")
+            print(f"Формат экспорта: {export_format}")
+            print(f"Путь к папке сохранения: {save_folder_path}")
+        elif document_type[1]:
+            print("Экспорт заявки")
+            print(f"Формат экспорта: {export_format}")
+            print(f"Путь к папке сохранения: {save_folder_path}")

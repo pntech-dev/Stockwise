@@ -52,4 +52,15 @@ class DocumentController:
 
     def export_button_clicked(self):
         """Функция обрабатывает нажатие кнопки экспорта."""
-        print("Экспорт")
+        # Получаем состояния выбора типа документа
+        # Первый объект - Докладная записка (Цех)
+        # Второй объект - Заявка (ПДС)
+        document_type = self.view.get_selected_document_type()
+
+        # Получаем формат экспорта
+        export_format = self.view.get_export_format()
+
+        # Вызываем экспорт документа в потоке
+        self.model.export_in_thread(document_type=document_type, 
+                                    save_folder_path=self.view.get_save_folder_path(),
+                                    export_format=export_format)
