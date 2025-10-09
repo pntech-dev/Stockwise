@@ -17,17 +17,6 @@ class DocumentView:
             return "bid"
         else:
             return None
-    
-    def get_export_format(self):
-        """Функция возвращает формат экспорта."""
-        if self.ui.export_formats_excel_radioButton.isChecked():
-            return "excel"
-        elif self.ui.export_formats_word_radioButton.isChecked():
-            return "word"
-        elif self.ui.export_formats_pdf_radioButton.isChecked():
-            return "pdf"
-        else:
-            return None
         
     def get_outgoing_number(self):
         """Функция возвращает номер исходящего документа."""

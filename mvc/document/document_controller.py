@@ -62,13 +62,9 @@ class DocumentController:
         # Второй объект - Заявка (ПДС)
         document_type = self.view.get_selected_document_type()
 
-        # Получаем формат экспорта
-        export_format = self.view.get_export_format()
-
         # Вызываем экспорт документа в потоке
         self.model.export_in_thread(document_type=document_type, 
-                                    save_folder_path=self.view.get_save_folder_path(),
-                                    export_format=export_format)
+                                    save_folder_path=self.view.get_save_folder_path())
 
     def on_document_type_radiobutton_clicked(self):
         """Функция обрабатывает изменение типа документа."""
@@ -81,7 +77,6 @@ class DocumentController:
     def on_date_dateedit_changed(self):
         """Функция обрабатывает изменение даты."""
         self.model.current_date = self.view.get_date().toString("dd.MM.yyyy")
-        print(self.model.current_date)
 
     def on_from_position_lineedit_text_changed(self):
         """Функция обрабатывает изменение должности от кого."""
