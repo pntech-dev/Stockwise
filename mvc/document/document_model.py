@@ -5,8 +5,11 @@ import threading
 from PyQt5.QtCore import QDate
 
 # Excel экспорт
+from copy import copy
 from jinja2 import Template
 from openpyxl import load_workbook
+from openpyxl.styles import Font, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 
 class DocumentModel:
     def __init__(self, product_name, norms_calculations_value, materials, current_product_path):
@@ -62,6 +65,110 @@ class DocumentModel:
             # self.show_notification.emit("error", "Указанный путь к папке изделий не существует или не является папкой.")
             return
         
+    def __get_document_materials_list(self):
+        """Функция возвращает список материалов для докладной записки."""
+        self.current_materials = []
+
+        for item in self.materials:
+            if item['Ед. изм.'] != "шт" and not item["РМП"]:
+                self.current_materials.append(item)
+
+        return self.current_materials
+    
+    def __get_bid_materials_list(self):
+        """Функция возвращает список материалов для заявки."""
+        self.current_materials = []
+
+        for item in self.materials:
+            if not item['РМП'] and item['Ед. изм.'] == "шт":
+                self.current_materials.append(item)
+
+        return self.current_materials
+    
+    def __export_materials_list(self, workbook, materials_list):
+        """Функция экспортирует список материалов на новую страницу в Excel."""
+        wb_template = load_workbook("templates/table.xlsx")
+        template_sheet = wb_template.active
+
+        new_sheet = workbook.create_sheet(title="Перечень материалов")
+
+        # Копируем значения и стили безопасно
+        for row in template_sheet.iter_rows():
+            for cell in row:
+                new_cell = new_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
+
+                if cell.has_style:
+                    new_cell.font = copy(cell.font)
+                    new_cell.border = copy(cell.border)
+                    new_cell.fill = copy(cell.fill)
+                    new_cell.number_format = copy(cell.number_format)
+                    new_cell.protection = copy(cell.protection)
+                    new_cell.alignment = copy(cell.alignment)
+
+                if cell.hyperlink:
+                    new_cell.hyperlink = copy(cell.hyperlink)
+                if cell.comment:
+                    new_cell.comment = copy(cell.comment)
+
+        # Копируем ширину колонок
+        for col_letter, col_dim in template_sheet.column_dimensions.items():
+            new_sheet.column_dimensions[col_letter].width = col_dim.width
+
+        # Копируем высоту строк
+        for row_idx, row_dim in template_sheet.row_dimensions.items():
+            new_sheet.row_dimensions[row_idx].height = row_dim.height
+    
+        # Заполняем материалы
+        start_row = 2
+        for i, item in enumerate(materials_list):
+            row = start_row + i
+            new_sheet.cell(row=row, column=1, value=item['Номенклатура'])
+            new_sheet.cell(row=row, column=2, value=item['Количество'])
+            new_sheet.cell(row=row, column=3, value=item['Ед. изм.'])
+
+        # Общие настройки шрифта и перенос текста
+        font = Font(name="Times New Roman", size=14)
+
+        for row in new_sheet.iter_rows(min_row=start_row, max_row=new_sheet.max_row, max_col=3):
+            for cell in row:
+                cell.font = font
+                cell.alignment = Alignment(wrap_text=True, vertical="top")
+
+        # Отдельно задаём выравнивание текста для каждой колонки
+        for row in range(start_row, new_sheet.max_row + 1):
+            # 1-я колонка — слева сверху
+            new_sheet.cell(row=row, column=1).alignment = Alignment(
+                horizontal="left", vertical="top", wrap_text=True
+            )
+            # 2-я и 3-я — по центру сверху
+            for col in [2, 3]:
+                new_sheet.cell(row=row, column=col).alignment = Alignment(
+                    horizontal="center", vertical="top", wrap_text=True
+                )
+
+        # Настраиваем рамки таблицы 
+        thick = Side(border_style="thick", color="000000")  # Жирная линия
+        thin = Side(border_style="thin", color="000000")    # Тонкая линия
+
+        for row in range(start_row, new_sheet.max_row + 1):
+            for col in [1, 2, 3]:
+                cell = new_sheet.cell(row=row, column=col)
+
+                # Задаём рамки по умолчанию
+                left = thick if col == 1 else thin
+                right = thick if col == 3 else thin
+                top = thin
+                bottom = thin
+
+                # Применяем границы
+                cell.border = Border(left=left, right=right, top=top, bottom=bottom)
+
+        # Настраиваем автоматическое выравнивание
+        new_sheet.page_setup.fitToWidth = 1 # По высоте строки
+        new_sheet.page_setup.fitToHeight = 0 # По ширине столбца
+
+        return new_sheet
+        
     def __export_to_excel(self, document_type, save_folder_path):
         """Функция обрабатывает экспорт в Excel."""
         context = {
@@ -75,27 +182,42 @@ class DocumentModel:
                 "from_fio": self.from_fio,
             }
 
-        if document_type == "document": # Если документ - Докладная записка (Цех)
+        # Если документ - Докладная записка (Цех)
+        if document_type == "document":
+            # Страница докладной записки
             wb = load_workbook("templates/document.xlsx")
             ws = wb.active
 
+            ws.title = "Докладная"
+
             for row in ws.iter_rows():
                 for cell in row:
                     if isinstance(cell.value, str) and "{{" in cell.value:
                         template = Template(cell.value)
                         cell.value = template.render(context)
 
+            # Страница перечня материалов
+            materials_list = self.__get_document_materials_list()
+            self.__export_materials_list(workbook=wb, materials_list=materials_list)
+
+            # Сохраняем документ
             wb.save(os.path.join(save_folder_path, "test_document.xlsx"))
 
-        elif document_type == "bid": # Если документ - Заявка (ПДС)
+        # Если документ - Заявка (ПДС)
+        elif document_type == "bid":
             wb = load_workbook("templates/bid.xlsx")
             ws = wb.active
+            ws.title = "Заявка"
 
             for row in ws.iter_rows():
                 for cell in row:
                     if isinstance(cell.value, str) and "{{" in cell.value:
                         template = Template(cell.value)
                         cell.value = template.render(context)
+
+            # Страница перечня материалов
+            materials_list = self.__get_bid_materials_list()
+            self.__export_materials_list(workbook=wb, materials_list=materials_list)
 
             wb.save(os.path.join(save_folder_path, "test_bid.xlsx"))
 
@@ -116,7 +238,7 @@ class DocumentModel:
                     
         return self.product_name
     
-    def export_in_thread(self, document_type, save_folder_path, export_format="excel"):
+    def export_in_thread(self, document_type, save_folder_path):
         """Функция запускает процесс экспорта документа в отдельном потоке."""
         if len(save_folder_path) == 0:
             try:
