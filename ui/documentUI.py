@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'ui/documentUi.ui'
+# Form implementation generated from reading ui file 'ui/documentUI.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.11
 #
@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(866, 615)
+        MainWindow.resize(866, 756)
         MainWindow.setStyleSheet("QMainWindow {\n"
 "    background-color: #F2F2F2;\n"
 "}\n"
@@ -568,7 +568,21 @@ class Ui_MainWindow(object):
         self.horizontalLayout_12.addWidget(self.save_file_path_line_choose_pushButton)
         self.verticalLayout_10.addWidget(self.save_file_path_line_frame)
         self.verticalLayout_8.addWidget(self.save_file_path_frame)
-        self.document_type_frame = QtWidgets.QFrame(self.export_frame)
+        self.frame = QtWidgets.QFrame(self.export_frame)
+        self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame.setObjectName("frame")
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.frame)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout.setSpacing(8)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.label = QtWidgets.QLabel(self.frame)
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.label.setFont(font)
+        self.label.setObjectName("label")
+        self.verticalLayout.addWidget(self.label)
+        self.document_type_frame = QtWidgets.QFrame(self.frame)
         font = QtGui.QFont()
         font.setPointSize(12)
         self.document_type_frame.setFont(font)
@@ -579,23 +593,22 @@ class Ui_MainWindow(object):
         self.horizontalLayout_14.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_14.setSpacing(16)
         self.horizontalLayout_14.setObjectName("horizontalLayout_14")
-        self.report_checkBox = QtWidgets.QCheckBox(self.document_type_frame)
+        self.radioButton = QtWidgets.QRadioButton(self.document_type_frame)
         font = QtGui.QFont()
         font.setPointSize(12)
-        self.report_checkBox.setFont(font)
-        self.report_checkBox.setChecked(True)
-        self.report_checkBox.setObjectName("report_checkBox")
-        self.horizontalLayout_14.addWidget(self.report_checkBox)
-        self.bid_checkBox = QtWidgets.QCheckBox(self.document_type_frame)
+        self.radioButton.setFont(font)
+        self.radioButton.setObjectName("radioButton")
+        self.horizontalLayout_14.addWidget(self.radioButton)
+        self.radioButton_2 = QtWidgets.QRadioButton(self.document_type_frame)
         font = QtGui.QFont()
         font.setPointSize(12)
-        self.bid_checkBox.setFont(font)
-        self.bid_checkBox.setChecked(True)
-        self.bid_checkBox.setObjectName("bid_checkBox")
-        self.horizontalLayout_14.addWidget(self.bid_checkBox)
+        self.radioButton_2.setFont(font)
+        self.radioButton_2.setObjectName("radioButton_2")
+        self.horizontalLayout_14.addWidget(self.radioButton_2)
         spacerItem5 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_14.addItem(spacerItem5)
-        self.verticalLayout_8.addWidget(self.document_type_frame)
+        self.verticalLayout.addWidget(self.document_type_frame)
+        self.verticalLayout_8.addWidget(self.frame)
         self.export_pushButton = QtWidgets.QPushButton(self.export_frame)
         self.export_pushButton.setEnabled(False)
         self.export_pushButton.setMinimumSize(QtCore.QSize(0, 24))
@@ -717,8 +730,9 @@ class Ui_MainWindow(object):
         self.save_file_path_label.setText(_translate("MainWindow", "Выберите папку для сохранения:"))
         self.save_file_path_line_lineEdit.setPlaceholderText(_translate("MainWindow", "По умолчанию файл сохраняется на рабочий стол"))
         self.save_file_path_line_choose_pushButton.setText(_translate("MainWindow", "Выбрать"))
-        self.report_checkBox.setText(_translate("MainWindow", "Докладная"))
-        self.bid_checkBox.setText(_translate("MainWindow", "Заявка"))
+        self.label.setText(_translate("MainWindow", "Выберите вид документа:"))
+        self.radioButton.setText(_translate("MainWindow", "Докладная"))
+        self.radioButton_2.setText(_translate("MainWindow", "Заявка"))
         self.export_pushButton.setText(_translate("MainWindow", "Экспортировать"))
         self.progress_bar_labels_process_label.setText(_translate("MainWindow", "Процесс..."))
         self.progress_bar_labels_percents_label.setText(_translate("MainWindow", "0%"))
