@@ -6,9 +6,10 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('version 1.1.0.txt', '.'),
-        ('config.yaml', '.'),
-        ('updater.exe', '.')
+    ('version 2.0.0.txt', '.'),
+    ('config.yaml', '.'),
+    ('updater.exe', '.'),
+    ('templates', 'templates'),
     ],
     hiddenimports=[],
     hookspath=[],
