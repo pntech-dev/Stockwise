@@ -39,8 +39,11 @@ class DocumentModel(QObject):
         self.from_fio = "" # ФИО от кого
 
         # Black и White листы
-        self.bid_blacklist = []
         self.document_blacklist = []
+        self.document_whitelist = []
+
+        self.bid_blacklist = []
+        self.bid_whitelist = []
 
         self.__load_config() # Загружаем конфигурацию при инициализации
 
@@ -61,12 +64,13 @@ class DocumentModel(QObject):
             return
 
         # Записываем данные из файла кофигурации
-        self.signature_from_human = config["signature_from_human"]
-        self.signature_from_position = config["signature_from_position"]
-        self.signature_whom_human = config["signature_whom_human"]
-        self.signature_whom_position = config["signature_whom_position"]
+        self.signature_from_human = config.get("signature_from_human", [])
+        self.signature_from_position = config.get("signature_from_position", [])
+        self.signature_whom_human = config.get("signature_whom_human", [])
+        self.signature_whom_position = config.get("signature_whom_position", [])
 
-        path = config["path_to_products_folder"]
+        # Получаем и проверяем путь к папке изделий
+        path = config.get("path_to_products_folder", "")
         if os.path.exists(path) and os.path.isdir(path):
             self.path_to_products_folder = path
             self.is_products_folder_available = True
@@ -74,21 +78,23 @@ class DocumentModel(QObject):
             self.show_notification.emit("error", "Указанный путь к папке изделий не существует или не является папкой.")
             return
         
-        # Получаем блэклист заявки
-        bid_blacklist = config.get("bid_blacklist")
-        if bid_blacklist:
-            self.bid_blacklist = bid_blacklist
-        else:
+        # Blacklists
+        self.bid_blacklist = config.get("bid_blacklist", [])
+        if not self.bid_blacklist:
             self.show_notification.emit("error", "Ошибка при чтении блэклиста заявок")
-            return
-        
-        # Получаем блэклист докладной
-        document_blacklist = config.get("document_blacklist")
-        if document_blacklist:
-            self.document_blacklist = document_blacklist
-        else:
+
+        self.document_blacklist = config.get("document_blacklist", [])
+        if not self.document_blacklist:
             self.show_notification.emit("error", "Ошибка при чтении блэклиста докладной записки")
-            return
+
+        # Whitelists
+        self.bid_whitelist = config.get("bid_whitelist", [])
+        if not self.bid_whitelist:
+            self.show_notification.emit("error", "Ошибка при чтении уайтлиста заявок")
+
+        self.document_whitelist = config.get("document_whitelist", [])
+        if not self.document_whitelist:
+            self.show_notification.emit("error", "Ошибка при чтении уайтлиста докладной записки")
 
     def __get_document_materials_list(self):
         """Функция возвращает список материалов для докладной записки."""
@@ -96,7 +102,10 @@ class DocumentModel(QObject):
             self.current_materials = []
 
             for item in self.materials:
-                if item['Ед. изм.'] != "шт" and not item["РМП"]:
+                if any(word.lower() in item['Номенклатура'].lower() for word in self.document_whitelist):
+                    self.current_materials.append(item)
+
+                elif item['Ед. изм.'] != "шт" and not item["РМП"]:
                     # Проверяем находиться ли материал в блэклисте
                     in_blacklist = False
                     if any(word.lower() in item['Номенклатура'].lower() for word in self.document_blacklist):
@@ -109,7 +118,7 @@ class DocumentModel(QObject):
             return self.current_materials
         
         except Exception as e:
-            self.show_notification.emit("error", f"Произошла ошибка во время получения списка материалов")
+            self.show_notification.emit("error", f"Произошла ошибка во время получения списка материалов\nОшибка: {e}")
             return []
     
     def __get_bid_materials_list(self):
@@ -118,7 +127,10 @@ class DocumentModel(QObject):
             self.current_materials = []
 
             for item in self.materials:
-                if item['Ед. изм.'] == "шт":
+                if any(word.lower() in item['Номенклатура'].lower() for word in self.bid_whitelist):
+                    self.current_materials.append(item)
+
+                elif item['Ед. изм.'] == "шт":
                     # Проверяем находиться ли материал в блэклисте
                     in_blacklist = False
                     if any(word.lower() in item['Номенклатура'].lower() for word in self.bid_blacklist):
@@ -130,7 +142,7 @@ class DocumentModel(QObject):
 
             return self.current_materials
         except Exception as e:
-            self.show_notification.emit("error", f"Произошла ошибка во время получения списка материалов")
+            self.show_notification.emit("error", f"Произошла ошибка во время получения списка материалов\nОшибка: {e}")
             return []
     
     def __export_materials_list(self, workbook, materials_list, progress_bar_value, progress_bar_process_text):
