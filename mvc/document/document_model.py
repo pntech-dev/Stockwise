@@ -307,6 +307,7 @@ class DocumentModel(QObject):
 
                 progress_bar_value = 100
                 self.progress_changed.emit("Экспортирование завершено", progress_bar_value)
+                self.show_notification.emit("info", f"Данные экспортированы в {os.path.basename(save_path)}")
 
             # Если документ - Заявка (ПДС)
             elif document_type == "bid":
@@ -348,6 +349,7 @@ class DocumentModel(QObject):
 
                 progress_bar_value = 100
                 self.progress_changed.emit("Экспортирование завершено", progress_bar_value)
+                self.show_notification.emit("info", f"Данные экспортированы в {os.path.basename(save_path)}")
 
         except Exception as e:
             self.show_notification.emit("error", f"Произошла ошибка во время сохранения документа")
