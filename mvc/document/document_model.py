@@ -101,10 +101,13 @@ class DocumentModel(QObject):
             self.current_materials = []
 
             for item in self.materials:
-                if any(word.lower() in item['Номенклатура'].lower() for word in self.document_whitelist):
+                # Проверяем, находится ли материал в вайтлисте
+                if any(word.lower() in item['Номенклатура'].lower() for word in self.document_whitelist if word):
                     self.current_materials.append(item)
-
-                elif item['Ед. изм.'] != "шт" and not item["РМП"]:
+                    continue
+                
+                # Проверяем, находится ли материал в блэклисте
+                if item['Ед. изм.'] != "шт" and not item["РМП"]:
                     # Проверяем находиться ли материал в блэклисте
                     in_blacklist = False
                     if any(word.lower() in item['Номенклатура'].lower() for word in self.document_blacklist):
@@ -126,10 +129,13 @@ class DocumentModel(QObject):
             self.current_materials = []
 
             for item in self.materials:
-                if any(word.lower() in item['Номенклатура'].lower() for word in self.bid_whitelist):
+                # Проверяем, находится ли материал в вайтлисте
+                if any(word.lower() in item['Номенклатура'].lower() for word in self.bid_whitelist if word):
                     self.current_materials.append(item)
-
-                elif item['Ед. изм.'] == "шт":
+                    continue
+                
+                # Проверяем, находится ли материал в блэклитсе
+                if item['Ед. изм.'] == "шт":
                     # Проверяем находиться ли материал в блэклисте
                     in_blacklist = False
                     if any(word.lower() in item['Номенклатура'].lower() for word in self.bid_blacklist):
