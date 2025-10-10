@@ -84,9 +84,11 @@ class DocumentController:
             line_edit.textChanged.connect(lambda text, le=line_edit: self.on_text_changed_for_filter(text, le))
 
     def on_completer_highlighted(self, text):
+        """Устанавливает флаг, указывающий на то, что предложение в автодополнении выделено. """
         self.is_highlighting = True
 
     def on_text_changed_for_filter(self, text, line_edit):
+        """Фильтрует предложения автозаполнения на основе введенного текста."""
         if self.is_highlighting:
             self.is_highlighting = False
             return
