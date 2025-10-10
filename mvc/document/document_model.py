@@ -12,6 +12,7 @@ from openpyxl.styles import Font, Alignment, Border, Side
 
 class DocumentModel(QObject):
     show_notification = pyqtSignal(str, str) # Сигнал показа уведомления
+    progress_changed = pyqtSignal(str, int) # Сигнал изменения значения прогресс бара
 
     def __init__(self, product_name, norms_calculations_value, materials, current_product_path):
         super().__init__()
@@ -42,6 +43,9 @@ class DocumentModel(QObject):
         self.document_blacklist = []
 
         self.__load_config() # Загружаем конфигурацию при инициализации
+
+        # Настройки для прогресс бара
+        self.progress_bar_export_excel_step_size = 7
 
     def __load_config(self):
         """Функция загружает конфигурацию из файла config.yaml."""
@@ -129,13 +133,19 @@ class DocumentModel(QObject):
             self.show_notification.emit("error", f"Произошла ошибка во время получения списка материалов")
             return []
     
-    def __export_materials_list(self, workbook, materials_list):
+    def __export_materials_list(self, workbook, materials_list, progress_bar_value, progress_bar_process_text):
         """Функция экспортирует список материалов на новую страницу в Excel."""
         try:
             wb_template = load_workbook("templates/table.xlsx")
             template_sheet = wb_template.active
 
+            progress_bar_value += self.progress_bar_export_excel_step_size
+            self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
             new_sheet = workbook.create_sheet(title="Перечень материалов")
+
+            progress_bar_value += self.progress_bar_export_excel_step_size
+            self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
             # Копируем значения и стили безопасно
             for row in template_sheet.iter_rows():
@@ -155,13 +165,22 @@ class DocumentModel(QObject):
                     if cell.comment:
                         new_cell.comment = copy(cell.comment)
 
+            progress_bar_value += self.progress_bar_export_excel_step_size
+            self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
             # Копируем ширину колонок
             for col_letter, col_dim in template_sheet.column_dimensions.items():
                 new_sheet.column_dimensions[col_letter].width = col_dim.width
 
+            progress_bar_value += self.progress_bar_export_excel_step_size
+            self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
             # Копируем высоту строк
             for row_idx, row_dim in template_sheet.row_dimensions.items():
                 new_sheet.row_dimensions[row_idx].height = row_dim.height
+
+            progress_bar_value += self.progress_bar_export_excel_step_size
+            self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
         
             # Заполняем материалы
             start_row = 2
@@ -171,6 +190,9 @@ class DocumentModel(QObject):
                 new_sheet.cell(row=row, column=2, value=item['Ед. изм.'])
                 new_sheet.cell(row=row, column=3, value=item['Количество'])
 
+            progress_bar_value += self.progress_bar_export_excel_step_size
+            self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
             # Общие настройки шрифта и перенос текста
             font = Font(name="Times New Roman", size=14)
 
@@ -178,6 +200,9 @@ class DocumentModel(QObject):
                 for cell in row:
                     cell.font = font
                     cell.alignment = Alignment(wrap_text=True, vertical="top")
+
+            progress_bar_value += self.progress_bar_export_excel_step_size
+            self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
             # Отдельно задаём выравнивание текста для каждой колонки
             for row in range(start_row, new_sheet.max_row + 1):
@@ -190,6 +215,9 @@ class DocumentModel(QObject):
                     new_sheet.cell(row=row, column=col).alignment = Alignment(
                         horizontal="center", vertical="top", wrap_text=True
                     )
+
+            progress_bar_value += self.progress_bar_export_excel_step_size
+            self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
             # Настраиваем рамки таблицы 
             thick = Side(border_style="thick", color="000000")  # Жирная линия
@@ -208,9 +236,15 @@ class DocumentModel(QObject):
                     # Применяем границы
                     cell.border = Border(left=left, right=right, top=top, bottom=bottom)
 
+            progress_bar_value += self.progress_bar_export_excel_step_size
+            self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
             # Настраиваем автоматическое выравнивание
             new_sheet.page_setup.fitToWidth = 1 # По высоте строки
             new_sheet.page_setup.fitToHeight = 0 # По ширине столбца
+
+            progress_bar_value += self.progress_bar_export_excel_step_size
+            self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
             return new_sheet
         
@@ -232,13 +266,21 @@ class DocumentModel(QObject):
             }
 
         try:
+            progress_bar_value = 0
+
             # Если документ - Докладная записка (Цех)
             if document_type == "document":
+                # Прогресс бар
+                save_path = os.path.join(save_folder_path, f"Докладная {self.product_name}.xlsx")
+                progress_bar_process_text = f"Экспортируем данные в документ {os.path.basename(save_path)}"
+
                 # Страница докладной записки
                 wb = load_workbook("templates/document.xlsx")
                 ws = wb.active
-
                 ws.title = "Докладная"
+
+                progress_bar_value += self.progress_bar_export_excel_step_size
+                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
                 for row in ws.iter_rows():
                     for cell in row:
@@ -246,30 +288,66 @@ class DocumentModel(QObject):
                             template = Template(cell.value)
                             cell.value = template.render(context)
 
+                progress_bar_value += self.progress_bar_export_excel_step_size
+                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
                 # Страница перечня материалов
                 materials_list = self.__get_document_materials_list()
-                self.__export_materials_list(workbook=wb, materials_list=materials_list)
+
+                progress_bar_value += self.progress_bar_export_excel_step_size
+                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
+                self.__export_materials_list(workbook=wb, 
+                                             materials_list=materials_list, 
+                                             progress_bar_value=progress_bar_value, 
+                                             progress_bar_process_text=progress_bar_process_text)
 
                 # Сохраняем документ
-                wb.save(os.path.join(save_folder_path, f"Докладная {self.product_name}.xlsx"))
+                wb.save(save_path)
+
+                progress_bar_value = 100
+                self.progress_changed.emit("Экспортирование завершено", progress_bar_value)
 
             # Если документ - Заявка (ПДС)
             elif document_type == "bid":
+                # Прогресс бар
+                save_path = os.path.join(save_folder_path, f"Заявка {self.product_name}.xlsx")
+                progress_bar_process_text = f"Экспортируем данные в документ {os.path.basename(save_path)}"
+
                 wb = load_workbook("templates/bid.xlsx")
                 ws = wb.active
                 ws.title = "Заявка"
 
+                progress_bar_value += self.progress_bar_export_excel_step_size
+                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
                 for row in ws.iter_rows():
                     for cell in row:
                         if isinstance(cell.value, str) and "{{" in cell.value:
                             template = Template(cell.value)
                             cell.value = template.render(context)
 
+                progress_bar_value += self.progress_bar_export_excel_step_size
+                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
                 # Страница перечня материалов
                 materials_list = self.__get_bid_materials_list()
-                self.__export_materials_list(workbook=wb, materials_list=materials_list)
 
-                wb.save(os.path.join(save_folder_path, f"Заявка {self.product_name}.xlsx"))
+                progress_bar_value += self.progress_bar_export_excel_step_size
+                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
+                self.__export_materials_list(workbook=wb, 
+                                             materials_list=materials_list, 
+                                             progress_bar_value=progress_bar_value, 
+                                             progress_bar_process_text=progress_bar_process_text)
+
+                progress_bar_value += self.progress_bar_export_excel_step_size
+                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+
+                wb.save(save_path)
+
+                progress_bar_value = 100
+                self.progress_changed.emit("Экспортирование завершено", progress_bar_value)
 
         except Exception as e:
             self.show_notification.emit("error", f"Произошла ошибка во время сохранения документа")

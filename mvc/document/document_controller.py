@@ -28,6 +28,7 @@ class DocumentController:
 
         # Сигналы
         self.model.show_notification.connect(self.show_notification) # Сигнал показа уведомления
+        self.model.progress_changed.connect(self.on_progress_bar_changed) # Сигнал изменения значения в прогресс баре
 
     def __set_lineedits(self):
         """Функция автоматического заполнения полей ввода."""
@@ -104,3 +105,8 @@ class DocumentController:
     def on_whom_fio_lineedit_text_changed(self):
         """Функция обрабатывает изменение ФИО кому."""
         self.model.whom_fio = self.view.get_whom_fio()
+
+    def on_progress_bar_changed(self, text, value):
+        """Функция обрабатывает изменение значения в прогресс баре."""
+        self.view.set_progress_bar_value(value) # Устанавливаем занчение прогресс бара
+        self.view.set_progerss_bar_labels_text(text=text, value=value) # Устанавливаем значения для меток прогресс бара
