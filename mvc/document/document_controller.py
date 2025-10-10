@@ -1,3 +1,5 @@
+from classes import Notification
+
 from PyQt5.QtWidgets import QFileDialog 
 
 
@@ -24,6 +26,9 @@ class DocumentController:
         self.view.whom_position_lineedit_text_changed(self.on_whom_position_lineedit_text_changed) # Изменение должности кому
         self.view.whom_fio_lineedit_text_changed(self.on_whom_fio_lineedit_text_changed) # Изменение ФИО
 
+        # Сигналы
+        self.model.show_notification.connect(self.show_notification) # Сигнал показа уведомления
+
     def __set_lineedits(self):
         """Функция автоматического заполнения полей ввода."""
         self.__set_nomenclature_lineedit() # Поле номенклатура
@@ -48,13 +53,6 @@ class DocumentController:
         """Функция устанавливает текущую дату в поле даты."""
         self.view.set_current_date(date=self.model.get_current_date())
 
-    def on_choose_save_file_path_button_clicked(self):
-        """Функция обрабатывает нажатие кнопки выбора пути сохранения файла."""
-        folder_path = QFileDialog.getExistingDirectory() # Получаем путь к папке
-
-        if folder_path: # Если путь получен
-            self.view.set_save_folder_path(path=folder_path) # Записываем путь в QLineEdit
-
     def export_button_clicked(self):
         """Функция обрабатывает нажатие кнопки экспорта."""
         # Получаем состояния выбора типа документа
@@ -65,6 +63,19 @@ class DocumentController:
         # Вызываем экспорт документа в потоке
         self.model.export_in_thread(document_type=document_type, 
                                     save_folder_path=self.view.get_save_folder_path())
+
+    def show_notification(self, msg_type, text):
+        """Функция показывает уведомление."""
+        Notification().show_notification_message(msg_type=msg_type, text=text)
+        self.view.set_progress_bar_value(value=0) # Устанавливаем занчение прогресс бара
+        self.view.set_progerss_bar_labels_text(text="Процесс...", value=0) # Устанавливаем значения для меток прогресс бара
+
+    def on_choose_save_file_path_button_clicked(self):
+        """Функция обрабатывает нажатие кнопки выбора пути сохранения файла."""
+        folder_path = QFileDialog.getExistingDirectory() # Получаем путь к папке
+
+        if folder_path: # Если путь получен
+            self.view.set_save_folder_path(path=folder_path) # Записываем путь в QLineEdit
 
     def on_document_type_radiobutton_clicked(self):
         """Функция обрабатывает изменение типа документа."""
