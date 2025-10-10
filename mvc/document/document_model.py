@@ -31,7 +31,6 @@ class DocumentModel(QObject):
         # Данные для подстановки в документ
         self.outgoing_number = "" # Номер исходящего документа
         self.current_date = "" # Текущая дата
-        # self.product_name = self.get_current_product_name() # Определяем имя текущего изделия
         self.quantity = norms_calculations_value
         self.whom_position = "" # Должность кому
         self.whom_fio = "" # ФИО кому
@@ -369,24 +368,6 @@ class DocumentModel(QObject):
     def get_current_date(self):
         """Функция возвращает текущую дату."""
         return QDate.currentDate()
-    
-    def get_current_product_name(self):
-        """Функция возвращает название текущего изделия."""
-        try:
-            # Проверяем что путь к папке изделия существует и является папкой
-            if os.path.exists(self.current_product_path) and os.path.isdir(self.current_product_path):
-                files = os.listdir(self.current_product_path) # Получаем список всех файлов в папке
-                for file in files:
-                    # Если файл и имя файла заканчивается на .xlsx или .xls
-                    if os.path.isfile(os.path.join(self.current_product_path, file)) and file.lower().endswith(('.xlsx', '.xls')):
-                        if any(product_name_word.lower() in file.lower().strip() for product_name_word in self.product_name.strip().split()):
-                            return os.path.splitext(file)[0]
-                        
-            return self.product_name
-        
-        except Exception as e:
-            self.show_notification.emit("error", f"Произошла ошибка во время получения названия текущего изделия")
-            return ""
         
     def get_desktop_path(self):
         """Функция возвращает путь к папке рабочего стола"""

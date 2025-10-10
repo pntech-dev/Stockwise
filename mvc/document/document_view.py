@@ -79,7 +79,6 @@ class DocumentView:
         self.ui.progress_bar_labels_process_label.setText(text)
         self.ui.progress_bar_labels_percents_label.setText(f"{value}%")
 
-
     def choose_save_file_path_button_clicked(self, handler):
         """Функция устанавливает обработчик нажатия кнопки выбора пути сохранения файла."""
         self.ui.save_file_path_line_choose_pushButton.clicked.connect(handler)
