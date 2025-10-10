@@ -23,7 +23,6 @@ class DocumentModel:
         self.signature_from_position = [] # Должность от кого
         self.signature_whom_human = [] # Подпсиь кому
         self.signature_whom_position = [] # Должность кому
-        self.__load_config() # Загружаем конфигурацию при инициализации
 
         # Данные для подстановки в документ
         self.outgoing_number = "" # Номер исходящего документа
@@ -34,6 +33,12 @@ class DocumentModel:
         self.whom_fio = "" # ФИО кому
         self.from_position = "" # Должность от кого
         self.from_fio = "" # ФИО от кого
+
+        # Black и White листы
+        self.bid_blacklist = []
+        self.document_blacklist = []
+
+        self.__load_config() # Загружаем конфигурацию при инициализации
 
     def __load_config(self):
         """Функция загружает конфигурацию из файла config.yaml."""
@@ -65,13 +70,36 @@ class DocumentModel:
             # self.show_notification.emit("error", "Указанный путь к папке изделий не существует или не является папкой.")
             return
         
+        # Получаем блэклист заявки
+        bid_blacklist = config.get("bid_blacklist")
+        if bid_blacklist:
+            self.bid_blacklist = bid_blacklist
+        else:
+            print("Ошибка при чтении блэклиста заявок")
+            return
+        
+        # Получаем блэклист докладной
+        document_blacklist = config.get("document_blacklist")
+        if document_blacklist:
+            self.document_blacklist = document_blacklist
+        else:
+            print("Ошибка при чтении блэклиста докладной записки")
+            return
+
     def __get_document_materials_list(self):
         """Функция возвращает список материалов для докладной записки."""
         self.current_materials = []
 
         for item in self.materials:
             if item['Ед. изм.'] != "шт" and not item["РМП"]:
-                self.current_materials.append(item)
+                # Проверяем находиться ли материал в блэклисте
+                in_blacklist = False
+                if any(word.lower() in item['Номенклатура'].lower() for word in self.document_blacklist):
+                    in_blacklist = True
+
+                # Если материал не в блэклисте, добавляем его
+                if not in_blacklist:
+                    self.current_materials.append(item)
 
         return self.current_materials
     
@@ -80,8 +108,15 @@ class DocumentModel:
         self.current_materials = []
 
         for item in self.materials:
-            if not item['РМП'] and item['Ед. изм.'] == "шт":
-                self.current_materials.append(item)
+            if item['Ед. изм.'] == "шт":
+                # Проверяем находиться ли материал в блэклисте
+                in_blacklist = False
+                if any(word.lower() in item['Номенклатура'].lower() for word in self.bid_blacklist):
+                    in_blacklist = True
+
+                # Если материал не в блэклисте, добавляем его
+                if not in_blacklist:
+                    self.current_materials.append(item)
 
         return self.current_materials
     
@@ -123,8 +158,8 @@ class DocumentModel:
         for i, item in enumerate(materials_list):
             row = start_row + i
             new_sheet.cell(row=row, column=1, value=item['Номенклатура'])
-            new_sheet.cell(row=row, column=2, value=item['Количество'])
-            new_sheet.cell(row=row, column=3, value=item['Ед. изм.'])
+            new_sheet.cell(row=row, column=2, value=item['Ед. изм.'])
+            new_sheet.cell(row=row, column=3, value=item['Количество'])
 
         # Общие настройки шрифта и перенос текста
         font = Font(name="Times New Roman", size=14)
@@ -201,7 +236,7 @@ class DocumentModel:
             self.__export_materials_list(workbook=wb, materials_list=materials_list)
 
             # Сохраняем документ
-            wb.save(os.path.join(save_folder_path, "test_document.xlsx"))
+            wb.save(os.path.join(save_folder_path, f"Докладная {self.product_name}.xlsx"))
 
         # Если документ - Заявка (ПДС)
         elif document_type == "bid":
@@ -219,7 +254,7 @@ class DocumentModel:
             materials_list = self.__get_bid_materials_list()
             self.__export_materials_list(workbook=wb, materials_list=materials_list)
 
-            wb.save(os.path.join(save_folder_path, "test_bid.xlsx"))
+            wb.save(os.path.join(save_folder_path, f"Заявка {self.product_name}.xlsx"))
 
     def get_current_date(self):
         """Функция возвращает текущую дату."""
