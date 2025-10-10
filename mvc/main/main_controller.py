@@ -1,8 +1,8 @@
 import sys
 
 from classes import Notification
+from mvc.document import create_document_window
 
-from PyQt5.QtWidgets import QFileDialog 
 from PyQt5.QtCore import QStringListModel, QSortFilterProxyModel, Qt
 
 
@@ -22,18 +22,20 @@ class CustomFilterProxyModel(QSortFilterProxyModel):
         return all(word in item_text_lower for word in search_words)
 
 
-class Controller:
+class MainController:
     def __init__(self, model, view):
         self.model = model
         self.view = view
         self.is_highlighting = False
+
+        self.document_window = None # Ссылка на окно документов
 
         self.__check_program_version() # Проверяем версию программы
 
         self.__check_available_products_folder() # Проверяем доступность папки изделий
 
         # Настраиваем QCompleter
-        self.model.update_product_names()
+        self.model.update_products_names()
         suggestions_lst = [" ".join(name) for name in self.model.products_names]
         
         string_list_model = QStringListModel(suggestions_lst)
@@ -49,12 +51,10 @@ class Controller:
         # Обработчики
         self.view.search_field_changed(self.on_search_field_changed) # Изменение текста в поле поиска
         self.view.clear_button_clicked(self.on_clear_button_clicked) # Нажатие кнопки очистки
-        self.view.choose_save_folder_path(self.on_choose_save_folder_path) # Нажатие кнопки выбора папки для сохранения
-        self.view.export_button_clicked(self.on_export_button_clicked) # Нажатие кнопки экспорта
+        self.view.create_document_button_clicked(self.on_create_document_button_clicked) # Нажатие кнопки экспорта
         self.view.norms_calculations_changed(self.on_norms_calculations_changed) # Изменение нормы расчета
 
         # Сигналы
-        self.model.progress_changed.connect(self.on_progress_bar_changed) # Сигнал изменения значения в прогресс баре
         self.model.show_notification.connect(self.show_notification) # Сигнал показа уведомления
 
     def __check_program_version(self):
@@ -96,8 +96,6 @@ class Controller:
     def show_notification(self, msg_type, text):
         """Функция показывает уведомление."""
         Notification().show_notification_message(msg_type=msg_type, text=text)
-        self.view.set_progress_bar_value(value=0) # Устанавливаем занчение прогресс бара
-        self.view.set_progerss_bar_labels_text(text="Процесс...", value=0) # Устанавливаем значения для меток прогресс бара
 
     def on_search_field_changed(self):
         """Функция обрабатывает изменение поля поиска."""
@@ -118,55 +116,44 @@ class Controller:
             product_materials = self.model.get_product_materials(semi_finished_products)
             self.model.current_product_materials = product_materials
             self.view.update_table_widget_data(data=product_materials)
-            self.view.update_export_button_state(enabled=True) # Изменяем состояние кнопки экспорта
+            self.view.update_create_document_button_state(enabled=True) # Изменяем состояние кнопки экспорта
         else:
             self.view.update_table_widget_data(data=[])
-            self.view.update_export_button_state(enabled=False)
+            self.view.update_create_document_button_state(enabled=False)
 
     def on_clear_button_clicked(self):
         """Функция обрабатывает нажатие кнопки очистки поля поиска."""
         self.view.clear_search_field() # Очищаем поле поиска
         self.view.update_clear_button_state(enabled=False) # Изменяем состояние кнопки очистки
 
-    def on_choose_save_folder_path(self):
-        """Функция обрабатывает нажатие кнопки выбора папки для сохранения."""
-        folder_path = QFileDialog.getExistingDirectory() # Получаем путь к папке
+    def on_create_document_button_clicked(self):
+        """Функция обрабатывает нажатие кнопки экспорта, вызывая создание окна создания документов."""
+        # Проверка, выбрано ли изделие
+        if not self.model.current_product_materials:
+            self.show_notification("error", "Нет данных для экспорта.\nСначала выберите изделие.")
+            return
 
-        if folder_path: # Если путь получен
-            self.view.set_save_folder_path(path=folder_path) # Записываем путь в QLineEdit
+        # Если окно ешё не открыто
+        if self.document_window is None:
+            # Создаём окно
+            self.document_window = create_document_window(product_name=self.model.current_product,
+                                                          norms_calculations_value=self.model.norms_calculations_value,
+                                                          materials=self.model.current_product_materials,
+                                                          current_product_path=self.model.current_product_path)
+            self.document_window.show() # Показываем окно
+            # Если окно было закрыто, вызываем отключение ссылки
+            self.document_window.destroyed.connect(self.on_document_window_destroyed)
+            self.view.update_create_document_button_state(enabled=False) # Отключаем кнопку "Создать документ"
 
-    def on_export_button_clicked(self):
-        """Функция обрабатывает нажатие кнопки экспорта."""
-        line_edit_save_path = self.view.get_save_path()
-        export_format = self.view.get_export_format()
-
-        save_path = ""
-        if line_edit_save_path:
-            save_path = line_edit_save_path
-        else:
-            save_path = self.model.get_desktop_path()
-
-        # Формируем данные для экспорта
-        data_to_export = []
-        for item in self.model.current_product_materials:
-            data_to_export.append({
-                'Номенклатура': item['Номенклатура'],
-                'Количество': item['Количество'],
-                'Ед. изм.': item['Ед. изм.'],
-                'Изделие': ", ".join(item['Изделие'])
-                })
-
-        self.model.export_data(save_path=save_path, export_format=export_format, data=data_to_export)
-
+    def on_document_window_destroyed(self):
+        """Функция обрабатывает закрытие окна документов."""
+        self.document_window = None # Обнуляем ссылку
+        self.view.update_create_document_button_state(enabled=True) # Включаем кнопку "Создать документ"
+        
     def on_norms_calculations_changed(self, value):
         """Функция обрабатывает изменение нормы расчета."""
         self.model.norms_calculations_value = value
         self.on_search_field_changed() # Обновляем данные в таблице
-
-    def on_progress_bar_changed(self, text, value):
-        """Функция обрабатывает изменение значения в прогресс баре."""
-        self.view.set_progress_bar_value(value) # Устанавливаем занчение прогресс бара
-        self.view.set_progerss_bar_labels_text(text=text, value=value) # Устанавливаем значения для меток прогресс бара
 
     def on_completer_highlighted(self, text):
         self.is_highlighting = True
