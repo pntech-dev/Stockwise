@@ -68,6 +68,16 @@ class DocumentView:
         """Функция устанавливает состояние кнопки экспорта."""
         self.ui.export_pushButton.setEnabled(enabled)
 
+    def set_progress_bar_value(self, value):
+        """Функция устанавливает значение в прогресс баре."""
+        self.ui.progressBar.setValue(value)
+
+    def set_progerss_bar_labels_text(self, text, value):
+        """Функция устанавливает текст в лейблах в прогресс бара."""
+        self.ui.progress_bar_labels_process_label.setText(text)
+        self.ui.progress_bar_labels_percents_label.setText(f"{value}%")
+
+
     def choose_save_file_path_button_clicked(self, handler):
         """Функция устанавливает обработчик нажатия кнопки выбора пути сохранения файла."""
         self.ui.save_file_path_line_choose_pushButton.clicked.connect(handler)
