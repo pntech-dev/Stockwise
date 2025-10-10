@@ -31,7 +31,7 @@ class DocumentModel(QObject):
         # Данные для подстановки в документ
         self.outgoing_number = "" # Номер исходящего документа
         self.current_date = "" # Текущая дата
-        self.product_name = self.get_current_product_name() # Определяем имя текущего изделия
+        # self.product_name = self.get_current_product_name() # Определяем имя текущего изделия
         self.quantity = norms_calculations_value
         self.whom_position = "" # Должность кому
         self.whom_fio = "" # ФИО кому

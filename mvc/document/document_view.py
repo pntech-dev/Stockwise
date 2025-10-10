@@ -50,11 +50,13 @@ class DocumentView:
         """Функция устанавливает значение поля количества изделий."""
         self.ui.product_count_spinBox.setValue(quantity)
 
-    def set_completer(self, line_edit, data):
+    def set_completer(self, line_edit, model):
         """Функция устанавливает QCompleter для поля ввода."""
-        completer = QCompleter(data, line_edit)
+        completer = QCompleter(model, line_edit)
         completer.setCaseSensitivity(0)
+        completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
         line_edit.setCompleter(completer)
+        return completer
 
     def set_current_date(self, date):
         """Функция устанавливает текущую дату в поле даты."""

@@ -1,12 +1,31 @@
 from classes import Notification
 
-from PyQt5.QtWidgets import QFileDialog 
+from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtCore import QStringListModel, QSortFilterProxyModel, Qt
+
+
+class CustomFilterProxyModel(QSortFilterProxyModel):
+    def filterAcceptsRow(self, source_row, source_parent):
+        index = self.sourceModel().index(source_row, 0, source_parent)
+        item_text = self.sourceModel().data(index, Qt.DisplayRole)
+        
+        filter_string = self.filterRegExp().pattern()
+        search_words = filter_string.lower().split()
+        
+        if not search_words:
+            return True
+            
+        item_text_lower = item_text.lower()
+        
+        return all(word in item_text_lower for word in search_words)
 
 
 class DocumentController:
     def __init__(self, model, view):
         self.model = model
         self.view = view
+        self.is_highlighting = False
+        self.proxy_models = {}
         
         self.__set_lineedits() # Вызываем автоматическое заполнение полей ввода
         self.__set_completers() # Вызываем установку комплитеров
@@ -45,10 +64,35 @@ class DocumentController:
 
     def __set_completers(self):
         """Функция устанавливает комплитеры для полей ввода."""
-        self.view.set_completer(self.view.ui.from_position_lineEdit, self.model.signature_from_position)
-        self.view.set_completer(self.view.ui.from_fio_lineEdit, self.model.signature_from_human)
-        self.view.set_completer(self.view.ui.whom_position_lineEdit, self.model.signature_whom_position)
-        self.view.set_completer(self.view.ui.whom_fio_lineEdit, self.model.signature_whom_human)
+        completer_fields = {
+            self.view.ui.from_position_lineEdit: self.model.signature_from_position,
+            self.view.ui.from_fio_lineEdit: self.model.signature_from_human,
+            self.view.ui.whom_position_lineEdit: self.model.signature_whom_position,
+            self.view.ui.whom_fio_lineEdit: self.model.signature_whom_human
+        }
+
+        for line_edit, suggestions in completer_fields.items():
+            string_list_model = QStringListModel(suggestions)
+            proxy_model = CustomFilterProxyModel()
+            proxy_model.setSourceModel(string_list_model)
+            
+            self.proxy_models[line_edit] = proxy_model
+            
+            completer = self.view.set_completer(line_edit, proxy_model)
+            completer.highlighted.connect(self.on_completer_highlighted)
+            
+            line_edit.textChanged.connect(lambda text, le=line_edit: self.on_text_changed_for_filter(text, le))
+
+    def on_completer_highlighted(self, text):
+        self.is_highlighting = True
+
+    def on_text_changed_for_filter(self, text, line_edit):
+        if self.is_highlighting:
+            self.is_highlighting = False
+            return
+        
+        if line_edit in self.proxy_models:
+            self.proxy_models[line_edit].setFilterRegExp(text)
     
     def __set_dateedit(self):
         """Функция устанавливает текущую дату в поле даты."""
