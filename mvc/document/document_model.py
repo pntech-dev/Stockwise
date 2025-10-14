@@ -369,7 +369,7 @@ class DocumentModel(QObject):
                 self.show_notification.emit("info", f"Данные экспортированы в {os.path.basename(save_path)}")
 
         except Exception as e:
-            self.show_notification.emit("error", f"Произошла ошибка во время сохранения документа")
+            self.show_notification.emit("error", f"Произошла ошибка во время сохранения документа. Ошибка: {e}")
 
     def get_current_date(self):
         """Функция возвращает текущую дату."""
@@ -378,8 +378,19 @@ class DocumentModel(QObject):
     def get_desktop_path(self):
         """Функция возвращает путь к папке рабочего стола"""
         try:
-            path = os.path.join(os.path.expanduser("~"), "Desktop")
-            return path
+            # Проверяем сначала путь к рабочему столу в OneDrive с русским названием
+            onedrive_desktop_path = os.path.join(os.path.expanduser("~"), "OneDrive", "Рабочий стол")
+            if os.path.exists(onedrive_desktop_path):
+                return onedrive_desktop_path
+
+            # Проверяем снова путь к рабочему столу в OneDrive
+            onedrive_desktop_path = os.path.join(os.path.expanduser("~"), "OneDrive", "Desktop")
+            if os.path.exists(onedrive_desktop_path):
+                return onedrive_desktop_path
+            
+            # Если не найден, используем стандартный путь
+            desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+            return desktop_path
         except Exception as e:
             self.show_notification.emit("error", f"Произошла ошибка при получении пути к папке Desktop: {e}")
             return
