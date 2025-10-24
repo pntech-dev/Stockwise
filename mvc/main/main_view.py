@@ -15,10 +15,10 @@ class MainView:
     def get_search_field_text(self):
         """Функция возвращает текст из поля поиска."""
         return self.ui.search_line_lineEdit.text()
-
-    def clear_search_field(self):
-        """Функция очищает поле поиска."""
-        self.ui.search_line_lineEdit.clear()
+    
+    def get_search_line_edit(self):
+        """Возвращает виджет QLineEdit для поиска."""
+        return self.ui.search_line_lineEdit
 
     def set_search_completer(self, model):
         """Функция устанавливает QCompleter для поля поиска."""
@@ -27,10 +27,19 @@ class MainView:
         completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
         self.ui.search_line_lineEdit.setCompleter(completer)
         return completer
+    
+    def set_window_enabled_state(self, enabled):
+        """Функция устанавливает состояние окна."""
+        self.ui.centralwidget.setEnabled(enabled)
 
-    def get_search_line_edit(self):
-        """Возвращает виджет QLineEdit для поиска."""
-        return self.ui.search_line_lineEdit
+    def set_search_field_text(self, text):
+        """Функция устанавливает текст в поле поиска."""
+        self.ui.search_line_lineEdit.setText(text)
+
+    def set_search_in_materials_checkbox_text(self, text):
+        """Функция устанавливает текст в поле поиска."""
+        checkbox_text = "Поиск по материалам изделия" if not text else f"Поиск по материалам изделия: {text}"
+        self.ui.search_in_materials_checkBox.setText(checkbox_text)
 
     def update_clear_button_state(self, enabled):
         """Функция обновляет состояние кнопки очистки поля поиска."""
@@ -60,6 +69,14 @@ class MainView:
         """Функция обновляет состояние кнопки экспорта."""
         self.ui.create_document_pushButton.setEnabled(enabled)
 
+    def update_export_button_state(self, enabled):
+        """Функция обновляет состояние кнопки экспорта."""
+        self.ui.export_pushButton.setEnabled(enabled)
+
+    def clear_search_field(self):
+        """Функция очищает поле поиска."""
+        self.ui.search_line_lineEdit.clear()
+
     def search_field_changed(self, handler):
         """Функция вызывает обработчик при изменении поля поиска."""
         self.ui.search_line_lineEdit.textChanged.connect(handler)
@@ -75,3 +92,11 @@ class MainView:
     def norms_calculations_changed(self, handler):
         """Функция вызывает обработчик при изменении нормы расчета."""
         self.ui.norms_calculations_spinBox.valueChanged.connect(handler)
+
+    def export_button_clicked(self, handler):
+        """функция вызывает обработчик при нажатии кнопки экспорта"""
+        self.ui.export_pushButton.clicked.connect(handler)
+
+    def search_in_materials_checkbox_state_changed(self, handler):
+        """Функция вызывает обработчик при изменении состояния чекбокса поиска в перечне материалов"""
+        self.ui.search_in_materials_checkBox.stateChanged.connect(lambda state: handler(state == 2))

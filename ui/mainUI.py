@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'ui/mainUi.ui'
+# Form implementation generated from reading ui file 'ui/mainUI.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.11
 #
@@ -116,10 +116,52 @@ class Ui_MainWindow(object):
 "    background-color: #EF4444;\n"
 "}\n"
 "\n"
-"QCheckBox {\n"
-"    color: #1F2937;\n"
-"    spacing: 4px;\n"
-"    border-radius: 6px;\n"
+"\n"
+"\n"
+"/* === Общие стили для QCheckBox === */\n"
+"QCheckBox{\n"
+"    color: #0F172A;                /* Акцентный текст */\n"
+"    font-weight: normal;\n"
+"    spacing: 8px;                  /* Расстояние между индикатором и текстом */\n"
+"}\n"
+"\n"
+"/* Индикатор */\n"
+"\n"
+"QCheckBox::indicator {\n"
+"    width: 14px;\n"
+"    height: 14px;\n"
+"    border-radius: 3px;            /* Небольшое скругление углов */\n"
+"    border: 1px solid #64748B;     /* Второстепенная рамка */\n"
+"    background-color: #FFFFFF;     /* Белый фон */\n"
+"}\n"
+"\n"
+"/* Наведение */\n"
+"QCheckBox::indicator:hover {\n"
+"    border: 1px solid #2563EB;     /* Акцентная рамка */\n"
+"}\n"
+"\n"
+"/* Активен (галочка) */\n"
+"QCheckBox::indicator:checked {\n"
+"    border: 1px solid #2563EB;\n"
+"    background-color: #2563EB;\n"
+"    image: url(:/icons/checkbox_check);  /* Собственная белая галочка */\n"
+"}\n"
+"\n"
+"/* Фокус */\n"
+"QCheckBox::indicator:focus {\n"
+"    border: 1px solid #2563EB;\n"
+"}\n"
+"\n"
+"/* Отключён */\n"
+"QCheckBox::indicator:disabled {\n"
+"    border: 1px solid #F8FAFC;\n"
+"    background-color: #FFFFFF;\n"
+"    image: none;\n"
+"}\n"
+"\n"
+"/* Текст отключённого чекбокса */\n"
+"QCheckBox:disabled {\n"
+"    color: #64748B;\n"
 "}")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setStyleSheet("")
@@ -128,12 +170,20 @@ class Ui_MainWindow(object):
         self.verticalLayout_6.setContentsMargins(8, 8, 8, 8)
         self.verticalLayout_6.setSpacing(8)
         self.verticalLayout_6.setObjectName("verticalLayout_6")
-        self.search_line_frame = QtWidgets.QFrame(self.centralwidget)
+        self.search_frame = QtWidgets.QFrame(self.centralwidget)
+        self.search_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.search_frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.search_frame.setObjectName("search_frame")
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.search_frame)
+        self.verticalLayout_2.setContentsMargins(16, 16, 16, 16)
+        self.verticalLayout_2.setSpacing(8)
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.search_line_frame = QtWidgets.QFrame(self.search_frame)
         self.search_line_frame.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.search_line_frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.search_line_frame.setObjectName("search_line_frame")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.search_line_frame)
-        self.horizontalLayout.setContentsMargins(16, 16, 16, 16)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout.setSpacing(8)
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.search_line_label = QtWidgets.QLabel(self.search_line_frame)
@@ -162,7 +212,14 @@ class Ui_MainWindow(object):
         self.search_line_clear_pushButton.setFont(font)
         self.search_line_clear_pushButton.setObjectName("search_line_clear_pushButton")
         self.horizontalLayout.addWidget(self.search_line_clear_pushButton)
-        self.verticalLayout_6.addWidget(self.search_line_frame)
+        self.verticalLayout_2.addWidget(self.search_line_frame)
+        self.search_in_materials_checkBox = QtWidgets.QCheckBox(self.search_frame)
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        self.search_in_materials_checkBox.setFont(font)
+        self.search_in_materials_checkBox.setObjectName("search_in_materials_checkBox")
+        self.verticalLayout_2.addWidget(self.search_in_materials_checkBox)
+        self.verticalLayout_6.addWidget(self.search_frame)
         self.norms_calculations_frame = QtWidgets.QFrame(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -266,6 +323,16 @@ class Ui_MainWindow(object):
 "}")
         self.create_document_pushButton.setObjectName("create_document_pushButton")
         self.verticalLayout_5.addWidget(self.create_document_pushButton)
+        self.export_pushButton = QtWidgets.QPushButton(self.create_document_frame)
+        self.export_pushButton.setEnabled(False)
+        self.export_pushButton.setMinimumSize(QtCore.QSize(0, 0))
+        self.export_pushButton.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setKerning(True)
+        self.export_pushButton.setFont(font)
+        self.export_pushButton.setObjectName("export_pushButton")
+        self.verticalLayout_5.addWidget(self.export_pushButton)
         self.verticalLayout_6.addWidget(self.create_document_frame)
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -278,5 +345,7 @@ class Ui_MainWindow(object):
         self.search_line_label.setText(_translate("MainWindow", "Поиск:"))
         self.search_line_lineEdit.setPlaceholderText(_translate("MainWindow", "БВВ.01"))
         self.search_line_clear_pushButton.setText(_translate("MainWindow", "Очистить"))
+        self.search_in_materials_checkBox.setText(_translate("MainWindow", "Поиск по материалам изделия"))
         self.norms_calculations_lalabel.setText(_translate("MainWindow", "Нормы на количество:"))
         self.create_document_pushButton.setText(_translate("MainWindow", "Создать документ"))
+        self.export_pushButton.setText(_translate("MainWindow", "Экспортировать"))
