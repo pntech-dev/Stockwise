@@ -36,6 +36,11 @@ class MainView:
         """Функция устанавливает текст в поле поиска."""
         self.ui.search_line_lineEdit.setText(text)
 
+    def set_search_in_materials_checkbox_text(self, text):
+        """Функция устанавливает текст в поле поиска."""
+        checkbox_text = "Поиск по материалам изделия" if not text else f"Поиск по материалам изделия: {text}"
+        self.ui.search_in_materials_checkBox.setText(checkbox_text)
+
     def update_clear_button_state(self, enabled):
         """Функция обновляет состояние кнопки очистки поля поиска."""
         self.ui.search_line_clear_pushButton.setEnabled(enabled)

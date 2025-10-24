@@ -186,8 +186,10 @@ class MainController:
         self.model.search_in_materials = state
         
         if state:
-            self.model.current_product = self.view.get_search_field_text()
+            product_name = self.view.get_search_field_text()
+            self.model.current_product = product_name
             self.view.clear_search_field()
+            self.view.set_search_in_materials_checkbox_text(text=product_name)
             
             material_names = [item['Номенклатура'] for item in self.model.current_product_materials]
             string_list_model = QStringListModel(material_names)
@@ -195,6 +197,7 @@ class MainController:
         else:
             self.view.set_search_field_text(self.model.current_product)
             self.model.current_product = ""
+            self.view.set_search_in_materials_checkbox_text(text="")
             
             suggestions_lst = [" ".join(name) for name in self.model.products_names]
             string_list_model = QStringListModel(suggestions_lst)
