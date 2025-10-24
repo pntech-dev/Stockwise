@@ -28,7 +28,10 @@ class MainModel(QObject):
         self.current_product_path = ""  # Путь к текущему продукту
         self.current_product_materials = []  # Список материалов текущего изделия
 
-        self.norms_calculations_value = 1 # Значение на которое рассчитываются нормы изделия
+        self.norms_calculations_value = 1 # Значение на которое рассчитываются нормы изделия по умолчанию
+
+        self.search_in_materials = False # Поиск в списке материалов
+        self.search_in_materials_data = [] # Список данных поиска в списке материалов
 
     def __load_config(self):
         """Функция загружает конфигурацию из файла config.yaml."""
@@ -247,7 +250,8 @@ class MainModel(QObject):
 
             # Заполняем материалы
             start_row = 2
-            for i, item in enumerate(self.current_product_materials):
+            data = self.search_in_materials_data if self.search_in_materials else self.current_product_materials
+            for i, item in enumerate(data):
                 row = start_row + i
                 new_sheet.cell(row=row, column=1, value=item['Номенклатура'])
                 new_sheet.cell(row=row, column=2, value=item['Ед. изм.'])

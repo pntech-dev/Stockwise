@@ -32,6 +32,10 @@ class MainView:
         """Функция устанавливает состояние окна."""
         self.ui.centralwidget.setEnabled(enabled)
 
+    def set_search_field_text(self, text):
+        """Функция устанавливает текст в поле поиска."""
+        self.ui.search_line_lineEdit.setText(text)
+
     def update_clear_button_state(self, enabled):
         """Функция обновляет состояние кнопки очистки поля поиска."""
         self.ui.search_line_clear_pushButton.setEnabled(enabled)
@@ -87,3 +91,7 @@ class MainView:
     def export_button_clicked(self, handler):
         """функция вызывает обработчик при нажатии кнопки экспорта"""
         self.ui.export_pushButton.clicked.connect(handler)
+
+    def search_in_materials_checkbox_state_changed(self, handler):
+        """Функция вызывает обработчик при изменении состояния чекбокса поиска в перечне материалов"""
+        self.ui.search_in_materials_checkBox.stateChanged.connect(lambda state: handler(state == 2))

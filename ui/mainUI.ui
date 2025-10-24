@@ -186,7 +186,7 @@ QCheckBox:disabled {
      <number>8</number>
     </property>
     <item>
-     <widget class="QFrame" name="frame">
+     <widget class="QFrame" name="search_frame">
       <property name="frameShape">
        <enum>QFrame::StyledPanel</enum>
       </property>
@@ -305,7 +305,7 @@ QCheckBox:disabled {
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="checkBox">
+        <widget class="QCheckBox" name="search_in_materials_checkBox">
          <property name="font">
           <font>
            <pointsize>12</pointsize>

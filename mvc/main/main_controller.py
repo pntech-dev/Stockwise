@@ -54,6 +54,7 @@ class MainController:
         self.view.create_document_button_clicked(self.on_create_document_button_clicked) # Нажатие кнопки создания документа
         self.view.norms_calculations_changed(self.on_norms_calculations_changed) # Изменение нормы расчета
         self.view.export_button_clicked(self.on_export_button_clicked) # Нажатие кнопки экспорта
+        self.view.search_in_materials_checkbox_state_changed(self.on_search_in_materials_checkbox_state_changed) # Изменение состояния чекбокса поиска по материалам
 
         # Сигналы
         self.model.show_notification.connect(self.show_notification) # Сигнал показа уведомления
@@ -101,29 +102,36 @@ class MainController:
 
     def on_search_field_changed(self):
         """Функция обрабатывает изменение поля поиска."""
-        # Обновляем состояние кнопки очистки если в поле поиска есть текст
-        self.view.update_clear_button_state(enabled=len(self.view.get_search_field_text()) > 0)
+        search_text = self.view.get_search_field_text()
+        self.view.update_clear_button_state(enabled=bool(search_text))
 
-        # Проверяем существует ли введёное название изделия в списке изделий
-        product_name = self.view.get_search_field_text()
+        data_for_view = []
         
-        semi_finished_products = []
-        for name in self.model.products_names:
-            if product_name == " ".join(name):
-                self.model.current_product = " ".join(name)
-                semi_finished_products = self.model.get_semi_finished_products(name)
-                break
-        
-        if semi_finished_products:
-            product_materials = self.model.get_product_materials(semi_finished_products)
-            self.model.current_product_materials = product_materials
-            self.view.update_table_widget_data(data=product_materials)
-            self.view.update_create_document_button_state(enabled=True) # Изменяем состояние кнопки экспорта
-            self.view.update_export_button_state(enabled=True) # Изменяем состояние кнопки экспорта
+        if not self.model.search_in_materials:
+            product_name = search_text
+            
+            product_tuple = next((name for name in self.model.products_names if " ".join(name) == product_name), None)
+
+            if product_tuple:
+                self.model.current_product = product_name
+                semi_finished_products = self.model.get_semi_finished_products(product_tuple)
+                if semi_finished_products:
+                    product_materials = self.model.get_product_materials(semi_finished_products)
+                    self.model.current_product_materials = product_materials
+                    data_for_view = product_materials
         else:
-            self.view.update_table_widget_data(data=[])
-            self.view.update_create_document_button_state(enabled=False)
-            self.view.update_export_button_state(enabled=False)
+            search_words = search_text.strip().lower().split()
+            
+            data_for_view = [
+                item for item in self.model.current_product_materials 
+                if all(word in item['Номенклатура'].lower() for word in search_words)
+            ]
+            self.model.search_in_materials_data = data_for_view
+
+        self.view.update_table_widget_data(data=data_for_view)
+        buttons_enabled = bool(data_for_view)
+        self.view.update_create_document_button_state(enabled=buttons_enabled)
+        self.view.update_export_button_state(enabled=buttons_enabled)
 
     def on_clear_button_clicked(self):
         """Функция обрабатывает нажатие кнопки очистки поля поиска."""
@@ -172,3 +180,22 @@ class MainController:
         """Функция обрабатывает нажатие кнопки экспорта."""
         self.view.set_window_enabled_state(enabled=False) # Отключаем окно
         self.model.export_data() # Вызываем экспорт данных
+
+    def on_search_in_materials_checkbox_state_changed(self, state):
+        """Функция обрабатывает изменение состояния чекбокса поиска по материалам."""
+        self.model.search_in_materials = state
+        
+        if state:
+            self.model.current_product = self.view.get_search_field_text()
+            self.view.clear_search_field()
+            
+            material_names = [item['Номенклатура'] for item in self.model.current_product_materials]
+            string_list_model = QStringListModel(material_names)
+            self.proxy_model.setSourceModel(string_list_model)
+        else:
+            self.view.set_search_field_text(self.model.current_product)
+            self.model.current_product = ""
+            
+            suggestions_lst = [" ".join(name) for name in self.model.products_names]
+            string_list_model = QStringListModel(suggestions_lst)
+            self.proxy_model.setSourceModel(string_list_model)
