@@ -117,10 +117,52 @@ QProgressBar[error=&quot;true&quot;]::chunk {
     background-color: #EF4444;
 }
 
-QCheckBox {
-    color: #1F2937;
-    spacing: 4px;
-    border-radius: 6px;
+
+
+/* === Общие стили для QCheckBox === */
+QCheckBox{
+    color: #0F172A;                /* Акцентный текст */
+    font-weight: normal;
+    spacing: 8px;                  /* Расстояние между индикатором и текстом */
+}
+
+/* Индикатор */
+
+QCheckBox::indicator {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;            /* Небольшое скругление углов */
+    border: 1px solid #64748B;     /* Второстепенная рамка */
+    background-color: #FFFFFF;     /* Белый фон */
+}
+
+/* Наведение */
+QCheckBox::indicator:hover {
+    border: 1px solid #2563EB;     /* Акцентная рамка */
+}
+
+/* Активен (галочка) */
+QCheckBox::indicator:checked {
+    border: 1px solid #2563EB;
+    background-color: #2563EB;
+    image: url(:/icons/checkbox_check);  /* Собственная белая галочка */
+}
+
+/* Фокус */
+QCheckBox::indicator:focus {
+    border: 1px solid #2563EB;
+}
+
+/* Отключён */
+QCheckBox::indicator:disabled {
+    border: 1px solid #F8FAFC;
+    background-color: #FFFFFF;
+    image: none;
+}
+
+/* Текст отключённого чекбокса */
+QCheckBox:disabled {
+    color: #64748B;
 }</string>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -144,14 +186,14 @@ QCheckBox {
      <number>8</number>
     </property>
     <item>
-     <widget class="QFrame" name="search_line_frame">
+     <widget class="QFrame" name="frame">
       <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
+       <enum>QFrame::StyledPanel</enum>
       </property>
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout">
+      <layout class="QVBoxLayout" name="verticalLayout_2">
        <property name="spacing">
         <number>8</number>
        </property>
@@ -168,70 +210,109 @@ QCheckBox {
         <number>16</number>
        </property>
        <item>
-        <widget class="QLabel" name="search_line_label">
+        <widget class="QFrame" name="search_line_frame">
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <property name="spacing">
+           <number>8</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="search_line_label">
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>Поиск:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="search_line_lineEdit">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Segoe UI</family>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <property name="placeholderText">
+             <string>БВВ.01</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="search_line_clear_pushButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>12</pointsize>
+              <kerning>true</kerning>
+             </font>
+            </property>
+            <property name="text">
+             <string>Очистить</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkBox">
          <property name="font">
           <font>
            <pointsize>12</pointsize>
           </font>
          </property>
          <property name="text">
-          <string>Поиск:</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="search_line_lineEdit">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <family>Segoe UI</family>
-           <pointsize>12</pointsize>
-          </font>
-         </property>
-         <property name="placeholderText">
-          <string>БВВ.01</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="search_line_clear_pushButton">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>100</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>100</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <kerning>true</kerning>
-          </font>
-         </property>
-         <property name="text">
-          <string>Очистить</string>
+          <string>Поиск по материалам изделия</string>
          </property>
         </widget>
        </item>
@@ -457,6 +538,34 @@ QPushButton:disabled {
          </property>
          <property name="text">
           <string>Создать документ</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="export_pushButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <kerning>true</kerning>
+          </font>
+         </property>
+         <property name="text">
+          <string>Экспортировать</string>
          </property>
         </widget>
        </item>

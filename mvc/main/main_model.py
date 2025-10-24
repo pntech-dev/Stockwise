@@ -5,6 +5,10 @@ import pandas as pd
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
+from pathlib import Path
+from openpyxl import load_workbook
+from openpyxl.styles import Font, Alignment, Border, Side
+
 class MainModel(QObject):
     show_notification = pyqtSignal(str, str) # Сигнал показа уведомления
 
@@ -143,6 +147,27 @@ class MainModel(QObject):
                 self.show_notification.emit("error", f"Файл {semi_finished_product} не найден.")
 
         return list(product_materials_dict.values())
+    
+    def get_desktop_path(self):
+        """Функция возвращает путь к папке Desktop"""
+        try:
+            # Проверяем сначала путь к рабочему столу в OneDrive с русским названием
+            onedrive_desktop_path = Path.home() / "OneDrive" / "Рабочий стол"
+            if onedrive_desktop_path.exists():
+                return onedrive_desktop_path
+
+            # Проверяем снова путь к рабочему столу в OneDrive
+            onedrive_desktop_path = Path.home() / "OneDrive" / "Desktop"
+            if onedrive_desktop_path.exists():
+                return onedrive_desktop_path
+
+            # Если не найден, используем стандартный путь
+            desktop_path = Path.home() / "Desktop"
+            return desktop_path
+
+        except Exception as e:
+            self.show_notification.emit("error", f"Произошла ошибка при получении пути к папке Desktop.\nОшибка: {e}")
+            return
 
     def check_program_version(self):
         """Функция проверяет версию программы"""
@@ -211,3 +236,77 @@ class MainModel(QObject):
         # Запускаем updater.exe с запросом прав администратора
         # Используем 'runas' для повышения прав
         subprocess.run(['powershell', '-Command', f'Start-Process "{updater_path}" -ArgumentList "{self.program_server_path}" -Verb RunAs'], shell=True)
+
+    def export_data(self):
+        """Функция экспортирует данные в Excel"""
+        try:
+            # Загружаем шаблон
+            workbook = load_workbook("templates/table.xlsx")
+            new_sheet = workbook.active
+            new_sheet.title = "Перечень материалов"
+
+            # Заполняем материалы
+            start_row = 2
+            for i, item in enumerate(self.current_product_materials):
+                row = start_row + i
+                new_sheet.cell(row=row, column=1, value=item['Номенклатура'])
+                new_sheet.cell(row=row, column=2, value=item['Ед. изм.'])
+                new_sheet.cell(row=row, column=3, value=item['Количество'])
+
+            # Общие настройки шрифта и перенос текста
+            font = Font(name="Times New Roman", size=14)
+
+            for row in new_sheet.iter_rows(min_row=start_row, max_row=new_sheet.max_row, max_col=3):
+                for cell in row:
+                    cell.font = font
+                    cell.alignment = Alignment(wrap_text=True, vertical="top")
+
+            # Отдельно задаём выравнивание текста для каждой колонки
+            for row in range(start_row, new_sheet.max_row + 1):
+                # 1-я колонка — слева сверху
+                new_sheet.cell(row=row, column=1).alignment = Alignment(
+                    horizontal="left", vertical="top", wrap_text=True
+                )
+                # 2-я и 3-я — по центру сверху
+                for col in [2, 3]:
+                    new_sheet.cell(row=row, column=col).alignment = Alignment(
+                        horizontal="center", vertical="top", wrap_text=True
+                    )
+
+            # Настраиваем рамки таблицы 
+            thick = Side(border_style="thick", color="000000")  # Жирная линия
+            thin = Side(border_style="thin", color="000000")    # Тонкая линия
+
+            for row in range(start_row, new_sheet.max_row + 1):
+                for col in [1, 2, 3]:
+                    cell = new_sheet.cell(row=row, column=col)
+
+                    # Задаём рамки по умолчанию
+                    left = thick if col == 1 else thin
+                    right = thick if col == 3 else thin
+                    top = thin
+                    bottom = thin
+
+                    # Применяем границы
+                    cell.border = Border(left=left, right=right, top=top, bottom=bottom)
+
+            # Настраиваем автоматическое выравнивание
+            new_sheet.page_setup.fitToWidth = 1 # По высоте строки
+            new_sheet.page_setup.fitToHeight = 0 # По ширине столбца
+
+            # Сохраняем файл на рабочем столе
+            desktop_path = self.get_desktop_path()
+            if not desktop_path:
+                self.show_notification.emit("error", f"Произошла ошибка во время получения пути рабочего стола.\nОшибка: {e}")
+                return
+            
+            file_name = f"Перечень материалов для {''.join(self.current_product)}.xlsx"
+            file_path = os.path.join(desktop_path, file_name)
+            
+            workbook.save(file_path)
+            
+            self.show_notification.emit("info", f"Файл сохранен на рабочем столе: {file_name}")
+
+        except Exception as e:
+            self.show_notification.emit("error", f"Произошла ошибка во время создания перечня материалов\nОшибка: {e}")
+            return

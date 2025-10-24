@@ -51,8 +51,9 @@ class MainController:
         # Обработчики
         self.view.search_field_changed(self.on_search_field_changed) # Изменение текста в поле поиска
         self.view.clear_button_clicked(self.on_clear_button_clicked) # Нажатие кнопки очистки
-        self.view.create_document_button_clicked(self.on_create_document_button_clicked) # Нажатие кнопки экспорта
+        self.view.create_document_button_clicked(self.on_create_document_button_clicked) # Нажатие кнопки создания документа
         self.view.norms_calculations_changed(self.on_norms_calculations_changed) # Изменение нормы расчета
+        self.view.export_button_clicked(self.on_export_button_clicked) # Нажатие кнопки экспорта
 
         # Сигналы
         self.model.show_notification.connect(self.show_notification) # Сигнал показа уведомления
@@ -96,6 +97,7 @@ class MainController:
     def show_notification(self, msg_type, text):
         """Функция показывает уведомление."""
         Notification().show_notification_message(msg_type=msg_type, text=text)
+        self.view.set_window_enabled_state(enabled=True) # Включаем окно
 
     def on_search_field_changed(self):
         """Функция обрабатывает изменение поля поиска."""
@@ -117,9 +119,11 @@ class MainController:
             self.model.current_product_materials = product_materials
             self.view.update_table_widget_data(data=product_materials)
             self.view.update_create_document_button_state(enabled=True) # Изменяем состояние кнопки экспорта
+            self.view.update_export_button_state(enabled=True) # Изменяем состояние кнопки экспорта
         else:
             self.view.update_table_widget_data(data=[])
             self.view.update_create_document_button_state(enabled=False)
+            self.view.update_export_button_state(enabled=False)
 
     def on_clear_button_clicked(self):
         """Функция обрабатывает нажатие кнопки очистки поля поиска."""
@@ -163,3 +167,8 @@ class MainController:
             self.is_highlighting = False
             return
         self.proxy_model.setFilterRegExp(text)
+
+    def on_export_button_clicked(self):
+        """Функция обрабатывает нажатие кнопки экспорта."""
+        self.view.set_window_enabled_state(enabled=False) # Отключаем окно
+        self.model.export_data() # Вызываем экспорт данных

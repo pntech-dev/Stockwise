@@ -76,10 +76,7 @@ To run the project from the source code, follow these steps:
 -   **Language**: Python 3.10
 -   **GUI**: PyQt5
 -   **Data Processing**: Pandas
--   **Exporting**:
-    -   Excel: `openpyxl`
-    -   Word: `python-docx`
-    -   PDF: `reportlab`
+-   **Exporting**: Excel: `openpyxl`
 -   **Architecture**: MVC (Model-View-Controller)
 
 ---
@@ -162,8 +159,5 @@ To run the project from the source code, follow these steps:
 -   **Язык**: Python 3.10
 -   **GUI**: PyQt5
 -   **Обработка данных**: Pandas
--   **Экспорт**:
-    -   Excel: `openpyxl`
-    -   Word: `python-docx`
-    -   PDF: `reportlab`
+-   **Экспорт**: Excel: `openpyxl`
 -   **Архитектура**: MVC (Model-View-Controller)
