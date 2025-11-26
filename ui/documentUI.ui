@@ -130,19 +130,16 @@ QDateEdit:focus {
     background-color: #FFFFFF;
 }
 
-/* Кнопка раскрытия календаря */
 QDateEdit::drop-down {
     subcontrol-origin: border;
     subcontrol-position: right center;
     width: 26px;
 
-    /* Единый контур с полем */
     border-left: 1px solid #D1D5DB;
     border-top: 1px solid #D1D5DB;
     border-right: 1px solid #D1D5DB;
     border-bottom: 1px solid #D1D5DB;
 
-    /* Скругления только справа */
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
 
@@ -150,18 +147,15 @@ QDateEdit::drop-down {
     padding: 0;
 }
 
-/* Hover по кнопке */
 QDateEdit::drop-down:hover {
     background-color: #E5E7EB;
     border-color: #9CA3AF;
 }
 
-/* При фокусе — общий акцент синим */
 QDateEdit:focus QDateEdit::drop-down {
     border-color: #2563EB;
 }
 
-/* Стрелка — центр */
 QDateEdit::down-arrow {
     subcontrol-origin: content;
     subcontrol-position: center;
@@ -172,13 +166,11 @@ QDateEdit::down-arrow {
     padding: 0;
 }
 
-/* Hover стрелки */
 QDateEdit::drop-down:hover QDateEdit::down-arrow {
     image: url(:/icons/arrow_down.svg);
     opacity: 0.8;
 }
 
-/* Disabled */
 QDateEdit:disabled {
     color: #9CA3AF;
     background-color: #F3F4F6;

@@ -1,411 +1,425 @@
 import os
-import yaml
 import threading
-
-from PyQt5.QtCore import QDate, QObject, pyqtSignal
-
-# Excel экспорт
 from copy import copy
+from pathlib import Path
+
+import yaml
 from jinja2 import Template
 from openpyxl import load_workbook
-from openpyxl.styles import Font, Alignment, Border, Side
+from openpyxl.styles import Alignment, Border, Font, Side
+from openpyxl.workbook import Workbook
+from openpyxl.worksheet.worksheet import Worksheet
+from PyQt5.QtCore import QDate, QObject, pyqtSignal
+
 
 class DocumentModel(QObject):
-    show_notification = pyqtSignal(str, str) # Сигнал показа уведомления
-    progress_changed = pyqtSignal(str, int) # Сигнал изменения значения прогресс бара
+    """Manages data and business logic for the document generation window.
 
-    def __init__(self, product_name, norms_calculations_value, materials, current_product_path):
+    This class loads necessary configuration, filters materials based on
+    document type, and handles the creation of styled Excel documents in a
+    separate thread to keep the UI responsive.
+
+    Attributes:
+        show_notification: Signal emitting messages for the user.
+        progress_changed: Signal to update the progress bar during export.
+    """
+
+    show_notification = pyqtSignal(str, str)
+    progress_changed = pyqtSignal(str, int)
+
+    def __init__(
+        self,
+        product_name: str,
+        norms_calculations_value: int,
+        materials: list[dict],
+        current_product_path: str,
+    ) -> None:
+        """Initializes the DocumentModel.
+
+        Args:
+            product_name: The name of the product.
+            norms_calculations_value: The quantity for which norms are calculated.
+            materials: The full list of materials for the product.
+            current_product_path: The filesystem path to the product's folder.
+        """
         super().__init__()
 
-        # Данные из основного окна приложения
-        self.product_name = product_name
-        self.materials = materials
-        self.current_product_path = current_product_path
+        # Data from the main application window
+        self.product_name: str = product_name
+        self.materials: list[dict] = materials
+        self.current_product_path: str = current_product_path
 
-        # Данные из файла конфигурации
-        self.signature_from_human = [] # Подпись от кого
-        self.signature_from_position = [] # Должность от кого
-        self.signature_whom_human = [] # Подпсиь кому
-        self.signature_whom_position = [] # Должность кому
+        # Data from configuration file
+        self.signature_from_human: list[str] = []
+        self.signature_from_position: list[str] = []
+        self.signature_whom_human: list[str] = []
+        self.signature_whom_position: list[str] = []
+        self.document_blacklist: list[str] = []
+        self.document_whitelist: list[str] = []
+        self.bid_blacklist: list[str] = []
+        self.bid_whitelist: list[str] = []
+        self.templates_folder_path: str = ""
+        self._load_config()
 
-        # Данные для подстановки в документ
-        self.outgoing_number = "" # Номер исходящего документа
-        self.current_date = "" # Текущая дата
-        self.quantity = norms_calculations_value
-        self.whom_position = "" # Должность кому
-        self.whom_fio = "" # ФИО кому
-        self.from_position = "" # Должность от кого
-        self.from_fio = "" # ФИО от кого
+        # Data for document templates
+        self.outgoing_number: str = ""
+        self.current_date: str = ""
+        self.quantity: int = norms_calculations_value
+        self.whom_position: str = ""
+        self.whom_fio: str = ""
+        self.from_position: str = ""
+        self.from_fio: str = ""
 
-        # Black и White листы
-        self.document_blacklist = []
-        self.document_whitelist = []
+        # Progress bar settings
+        self.progress_bar_export_excel_step_size: int = 7
 
-        self.bid_blacklist = []
-        self.bid_whitelist = []
+    def get_current_date(self) -> QDate:
+        """Returns the current date."""
+        return QDate.currentDate()
 
-        self.__load_config() # Загружаем конфигурацию при инициализации
+    def get_desktop_path(self) -> Path | None:
+        """Finds the path to the user's desktop folder.
 
-        # Настройки для прогресс бара
-        self.progress_bar_export_excel_step_size = 7
+        Checks for common OneDrive and standard desktop paths.
 
-    def __load_config(self):
-        """Функция загружает конфигурацию из файла config.yaml."""
+        Returns:
+            A Path object to the desktop, or None if an error occurs.
+        """
+        try:
+            home = Path.home()
+            # Check for Russian OneDrive path
+            onedrive_ru = home / "OneDrive" / "Рабочий стол"
+            if onedrive_ru.exists():
+                return onedrive_ru
+            # Check for English OneDrive path
+            onedrive_en = home / "OneDrive" / "Desktop"
+            if onedrive_en.exists():
+                return onedrive_en
+            # Fallback to standard Desktop path
+            return home / "Desktop"
+        except Exception as e:
+            self.show_notification.emit("error", f"Ошибка при получении пути к рабочему столу: {e}")
+            return None
+
+    def export_in_thread(
+        self,
+        document_type: str,
+        save_folder_path: str,
+    ) -> threading.Thread | None:
+        """Starts the document export process in a separate thread.
+
+        Args:
+            document_type: The type of document to export ('document' or 'bid').
+            save_folder_path: The folder where the document will be saved.
+
+        Returns:
+            The thread object that was started, or None on error.
+        """
+        path = save_folder_path
+        if not path:
+            desktop = self.get_desktop_path()
+            if not desktop:
+                self.show_notification.emit("error", "Не удалось найти путь к рабочему столу.")
+                return None
+            path = str(desktop)
+
+        try:
+            thread = threading.Thread(
+                target=self._export_to_excel, args=(document_type, path)
+            )
+            thread.daemon = True
+            thread.start()
+            return thread
+        except Exception as e:
+            self.show_notification.emit(
+                "error", f"Не удалось запустить поток для экспорта: {e}"
+            )
+            return None
+
+    def _load_config(self) -> None:
+        """Loads configuration from the config.yaml file."""
         try:
             with open("config.yaml", "r", encoding="utf-8") as file:
-                config = yaml.safe_load(file)
+                config = yaml.safe_load(file) or {{}}
         except FileNotFoundError:
             self.show_notification.emit("error", "Файл config.yaml не найден.")
             return
         
-        if "path_to_products_folder" not in config:
-            self.show_notification.emit("error", "В файле config.yaml не указан путь к папке изделий.")
-            return
+        # Load templates fodler path
+        self.templates_folder_path = config.get("templates_folder_path")
 
-        # Записываем данные из файла кофигурации
+        # Load signatures
         self.signature_from_human = config.get("signature_from_human", [])
         self.signature_from_position = config.get("signature_from_position", [])
         self.signature_whom_human = config.get("signature_whom_human", [])
         self.signature_whom_position = config.get("signature_whom_position", [])
 
-        # Получаем и проверяем путь к папке изделий
-        path = config.get("path_to_products_folder", "")
-        if os.path.exists(path) and os.path.isdir(path):
-            self.path_to_products_folder = path
-            self.is_products_folder_available = True
-        else:
-            self.show_notification.emit("error", "Указанный путь к папке изделий не существует или не является папкой.")
-            return
-        
-        # Blacklists
+        # Load whitelists and blacklists
         self.bid_blacklist = config.get("bid_blacklist", [])
-        if not self.bid_blacklist:
-            self.show_notification.emit("error", "Ошибка при чтении блэклиста заявок")
-
         self.document_blacklist = config.get("document_blacklist", [])
-        if not self.document_blacklist:
-            self.show_notification.emit("error", "Ошибка при чтении блэклиста докладной записки")
-
-        # Whitelists
         self.bid_whitelist = config.get("bid_whitelist", [])
-        if not self.bid_whitelist:
-            self.show_notification.emit("error", "Ошибка при чтении уайтлиста заявок")
-
         self.document_whitelist = config.get("document_whitelist", [])
-        if not self.document_whitelist:
-            self.show_notification.emit("error", "Ошибка при чтении уайтлиста докладной записки")
 
-    def __get_document_materials_list(self):
-        """Функция возвращает список материалов для докладной записки."""
+    def _get_document_materials_list(self) -> list[dict]:
+        """Filters and returns the material list for a formal note ('document').
+
+        Filtering logic:
+        1.  Always include materials in the document_whitelist.
+        2.  For other materials, include them if their unit is NOT 'pcs' and
+            they are not from an RMP folder, unless they are in the
+            document_blacklist.
+
+        Returns:
+            A list of filtered materials.
+        """
+        filtered_materials = []
         try:
-            self.current_materials = []
-
             for item in self.materials:
-                # Проверяем, находится ли материал в вайтлисте
-                if any(word.lower() in item['Номенклатура'].lower() for word in self.document_whitelist if word):
-                    self.current_materials.append(item)
+                nomenclature_lower = item["Номенклатура"].lower()
+
+                # 1. Whitelist check
+                if any(
+                    word.lower() in nomenclature_lower
+                    for word in self.document_whitelist
+                    if word
+                ):
+                    filtered_materials.append(item)
                     continue
-                
-                # Проверяем, находится ли материал в блэклисте
-                if item['Ед. изм.'] != "шт" and not item["РМП"]:
-                    # Проверяем находиться ли материал в блэклисте
-                    in_blacklist = False
-                    if any(word.lower() in item['Номенклатура'].lower() for word in self.document_blacklist):
-                        in_blacklist = True
 
-                    # Если материал не в блэклисте, добавляем его
-                    if not in_blacklist:
-                        self.current_materials.append(item)
-
-            return self.current_materials
-        
+                # 2. Main filter for non-whitelisted items
+                if item["Ед. изм."] != "шт" and not item["РМП"]:
+                    is_in_blacklist = any(
+                        word.lower() in nomenclature_lower
+                        for word in self.document_blacklist
+                        if word
+                    )
+                    if not is_in_blacklist:
+                        filtered_materials.append(item)
+            return filtered_materials
         except Exception as e:
-            self.show_notification.emit("error", f"Произошла ошибка во время получения списка материалов\nОшибка: {e}")
+            self.show_notification.emit(
+                "error", f"Произошла ошибка при фильтрации материалов:\n{e}"
+            )
             return []
-    
-    def __get_bid_materials_list(self):
-        """Функция возвращает список материалов для заявки."""
-        try:
-            self.current_materials = []
 
+    def _get_bid_materials_list(self) -> list[dict]:
+        """Filters and returns the material list for a request ('bid').
+
+        Filtering logic:
+        1.  Always include materials in the bid_whitelist.
+        2.  For other materials, include them if their unit IS 'pcs', unless
+            they are in the bid_blacklist.
+
+        Returns:
+            A list of filtered materials.
+        """
+        filtered_materials = []
+        try:
             for item in self.materials:
-                # Проверяем, находится ли материал в вайтлисте
-                if any(word.lower() in item['Номенклатура'].lower() for word in self.bid_whitelist if word):
-                    self.current_materials.append(item)
+                nomenclature_lower = item["Номенклатура"].lower()
+
+                # 1. Whitelist check
+                if any(
+                    word.lower() in nomenclature_lower
+                    for word in self.bid_whitelist
+                    if word
+                ):
+                    filtered_materials.append(item)
                     continue
-                
-                # Проверяем, находится ли материал в блэклитсе
-                if item['Ед. изм.'] == "шт":
-                    # Проверяем находиться ли материал в блэклисте
-                    in_blacklist = False
-                    if any(word.lower() in item['Номенклатура'].lower() for word in self.bid_blacklist):
-                        in_blacklist = True
 
-                    # Если материал не в блэклисте, добавляем его
-                    if not in_blacklist:
-                        self.current_materials.append(item)
-
-            return self.current_materials
+                # 2. Main filter for non-whitelisted items
+                if item["Ед. изм."] == "шт":
+                    is_in_blacklist = any(
+                        word.lower() in nomenclature_lower
+                        for word in self.bid_blacklist
+                        if word
+                    )
+                    if not is_in_blacklist:
+                        filtered_materials.append(item)
+            return filtered_materials
         except Exception as e:
-            self.show_notification.emit("error", f"Произошла ошибка во время получения списка материалов\nОшибка: {e}")
+            self.show_notification.emit(
+                "error", f"Произошла ошибка при фильтрации материалов:\n{e}"
+            )
             return []
-    
-    def __export_materials_list(self, workbook, materials_list, progress_bar_value, progress_bar_process_text):
-        """Функция экспортирует список материалов на новую страницу в Excel."""
-        try:
-            wb_template = load_workbook("templates/table.xlsx")
-            template_sheet = wb_template.active
 
+    def _export_materials_list(
+        self,
+        workbook: Workbook,
+        materials_list: list[dict],
+        progress_bar_value: int,
+        progress_bar_process_text: str,
+    ) -> int:
+        """Creates and styles a 'Material List' sheet in the given workbook.
+
+        Args:
+            workbook: The openpyxl Workbook to add the sheet to.
+            materials_list: The list of materials to populate the sheet with.
+            progress_bar_value: The current value of the progress bar.
+            progress_bar_process_text: The text for the progress bar.
+
+        Returns:
+            The updated progress bar value.
+        """
+        try:
+            table_template_path = os.path.join(self.templates_folder_path, "table.xlsx")
+            template_wb = load_workbook(table_template_path)
+            template_sheet = template_wb.active
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            new_sheet = workbook.create_sheet(title="Перечень материалов")
-
+            new_sheet = workbook.create_sheet(title="Список материалов")
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            # Копируем значения и стили безопасно
+            # Safely copy values and styles from the template sheet
             for row in template_sheet.iter_rows():
                 for cell in row:
-                    new_cell = new_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
-
+                    new_cell = new_sheet.cell(
+                        row=cell.row, column=cell.column, value=cell.value
+                    )
                     if cell.has_style:
                         new_cell.font = copy(cell.font)
                         new_cell.border = copy(cell.border)
                         new_cell.fill = copy(cell.fill)
-                        new_cell.number_format = copy(cell.number_format)
+                        new_cell.number_format = cell.number_format
                         new_cell.protection = copy(cell.protection)
                         new_cell.alignment = copy(cell.alignment)
 
-                    if cell.hyperlink:
-                        new_cell.hyperlink = copy(cell.hyperlink)
-                    if cell.comment:
-                        new_cell.comment = copy(cell.comment)
-
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            # Копируем ширину колонок
+            # Copy column dimensions and row heights
             for col_letter, col_dim in template_sheet.column_dimensions.items():
                 new_sheet.column_dimensions[col_letter].width = col_dim.width
-
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            # Копируем высоту строк
             for row_idx, row_dim in template_sheet.row_dimensions.items():
                 new_sheet.row_dimensions[row_idx].height = row_dim.height
-
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
-        
-            # Заполняем материалы
+
+            # Fill in the material data
             start_row = 2
             for i, item in enumerate(materials_list):
                 row = start_row + i
-                new_sheet.cell(row=row, column=1, value=item['Номенклатура'])
-                new_sheet.cell(row=row, column=2, value=item['Ед. изм.'])
-                new_sheet.cell(row=row, column=3, value=item['Количество'])
-
+                new_sheet.cell(row=row, column=1, value=item["Номенклатура"])
+                new_sheet.cell(row=row, column=2, value=item["Ед. изм."])
+                new_sheet.cell(row=row, column=3, value=item["Количество"])
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            # Общие настройки шрифта и перенос текста
+            # Apply font and alignment
             font = Font(name="Times New Roman", size=14)
-
-            for row in new_sheet.iter_rows(min_row=start_row, max_row=new_sheet.max_row, max_col=3):
+            for row in new_sheet.iter_rows(
+                min_row=start_row, max_row=new_sheet.max_row, max_col=3
+            ):
                 for cell in row:
                     cell.font = font
-                    cell.alignment = Alignment(wrap_text=True, vertical="top")
-
+                    if cell.column == 1:
+                        cell.alignment = Alignment(
+                            horizontal="left", vertical="top", wrap_text=True
+                        )
+                    else:
+                        cell.alignment = Alignment(
+                            horizontal="center", vertical="top", wrap_text=True
+                        )
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            # Отдельно задаём выравнивание текста для каждой колонки
-            for row in range(start_row, new_sheet.max_row + 1):
-                # 1-я колонка — слева сверху
-                new_sheet.cell(row=row, column=1).alignment = Alignment(
-                    horizontal="left", vertical="top", wrap_text=True
-                )
-                # 2-я и 3-я — по центру сверху
-                for col in [2, 3]:
-                    new_sheet.cell(row=row, column=col).alignment = Alignment(
-                        horizontal="center", vertical="top", wrap_text=True
+            # Apply borders
+            thick_side = Side(border_style="thick", color="000000")
+            thin_side = Side(border_style="thin", color="000000")
+            for row_idx in range(start_row, new_sheet.max_row + 1):
+                for col_idx in range(1, 4):
+                    cell = new_sheet.cell(row=row_idx, column=col_idx)
+                    left = thick_side if col_idx == 1 else thin_side
+                    right = thick_side if col_idx == 3 else thin_side
+                    cell.border = Border(
+                        left=left, right=right, top=thin_side, bottom=thin_side
                     )
-
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            # Настраиваем рамки таблицы 
-            thick = Side(border_style="thick", color="000000")  # Жирная линия
-            thin = Side(border_style="thin", color="000000")    # Тонкая линия
-
-            for row in range(start_row, new_sheet.max_row + 1):
-                for col in [1, 2, 3]:
-                    cell = new_sheet.cell(row=row, column=col)
-
-                    # Задаём рамки по умолчанию
-                    left = thick if col == 1 else thin
-                    right = thick if col == 3 else thin
-                    top = thin
-                    bottom = thin
-
-                    # Применяем границы
-                    cell.border = Border(left=left, right=right, top=top, bottom=bottom)
-
+            # Page setup
+            new_sheet.page_setup.fitToWidth = 1
+            new_sheet.page_setup.fitToHeight = 0
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            # Настраиваем автоматическое выравнивание
-            new_sheet.page_setup.fitToWidth = 1 # По высоте строки
-            new_sheet.page_setup.fitToHeight = 0 # По ширине столбца
-
-            progress_bar_value += self.progress_bar_export_excel_step_size
-            self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
-
-            return new_sheet
-        
+            return progress_bar_value
         except Exception as e:
-            self.show_notification.emit("error", f"Произошла ошибка во время создания перечня материалов\nОшибка: {e}")
-            return
-        
-    def __export_to_excel(self, document_type, save_folder_path):
-        """Функция обрабатывает экспорт в Excel."""
+            self.show_notification.emit(
+                "error", f"Ошибка при создании листа с перечнем материалов:\n{e}"
+            )
+            return progress_bar_value
+
+    def _export_to_excel(
+        self,
+        document_type: str,
+        save_folder_path: str,
+    ) -> None:
+        """Orchestrates the Excel export process for a given document type."""
         context = {
-                "outgoing_number": self.outgoing_number,
-                "current_date": self.current_date,
-                "whom_position": self.whom_position,
-                "whom_fio": self.whom_fio,
-                "product_name": self.product_name,
-                "product_quantity": self.quantity,
-                "from_position": self.from_position,
-                "from_fio": self.from_fio,
-            }
+            "outgoing_number": self.outgoing_number,
+            "current_date": self.current_date,
+            "whom_position": self.whom_position,
+            "whom_fio": self.whom_fio,
+            "product_name": self.product_name,
+            "product_quantity": self.quantity,
+            "from_position": self.from_position,
+            "from_fio": self.from_fio,
+        }
+        progress_bar_value = 0
 
         try:
-            progress_bar_value = 0
-
-            # Если документ - Докладная записка (Цех)
             if document_type == "document":
-                # Прогресс бар
-                save_path = os.path.join(save_folder_path, f"Докладная {self.product_name}.xlsx")
-                progress_bar_process_text = f"Экспортируем данные в документ {os.path.basename(save_path)}"
-
-                # Страница докладной записки
-                wb = load_workbook("templates/document.xlsx")
-                ws = wb.active
-                ws.title = "Докладная"
-
-                progress_bar_value += self.progress_bar_export_excel_step_size
-                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
-
-                for row in ws.iter_rows():
-                    for cell in row:
-                        if isinstance(cell.value, str) and "{{" in cell.value:
-                            template = Template(cell.value)
-                            cell.value = template.render(context)
-
-                progress_bar_value += self.progress_bar_export_excel_step_size
-                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
-
-                # Страница перечня материалов
-                materials_list = self.__get_document_materials_list()
-
-                progress_bar_value += self.progress_bar_export_excel_step_size
-                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
-
-                self.__export_materials_list(workbook=wb, 
-                                             materials_list=materials_list, 
-                                             progress_bar_value=progress_bar_value, 
-                                             progress_bar_process_text=progress_bar_process_text)
-
-                # Сохраняем документ
-                wb.save(save_path)
-
-                progress_bar_value = 100
-                self.progress_changed.emit("Экспортирование завершено", progress_bar_value)
-                self.show_notification.emit("info", f"Данные экспортированы в {os.path.basename(save_path)}")
-
-            # Если документ - Заявка (ПДС)
+                template_path = os.path.join(self.templates_folder_path, "document.xlsx")
+                save_filename = f"Докладная записка {self.product_name}.xlsx"
+                sheet_title = "Докладная записка"
+                materials_list = self._get_document_materials_list()
             elif document_type == "bid":
-                # Прогресс бар
-                save_path = os.path.join(save_folder_path, f"Заявка {self.product_name}.xlsx")
-                progress_bar_process_text = f"Экспортируем данные в документ {os.path.basename(save_path)}"
+                template_path = os.path.join(self.templates_folder_path, "bid.xlsx")
+                save_filename = f"Заявка {self.product_name}.xlsx"
+                sheet_title = "Заявка"
+                materials_list = self._get_bid_materials_list()
+            else:
+                return  # Should not happen
 
-                wb = load_workbook("templates/bid.xlsx")
-                ws = wb.active
-                ws.title = "Заявка"
+            save_path = Path(save_folder_path) / save_filename
+            progress_text = f"Экспорт в {save_filename}..."
 
-                progress_bar_value += self.progress_bar_export_excel_step_size
-                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+            # Load main template and render context variables
+            wb = load_workbook(template_path)
+            ws = wb.active
+            ws.title = sheet_title
+            progress_bar_value += self.progress_bar_export_excel_step_size
+            self.progress_changed.emit(progress_text, progress_bar_value)
 
-                for row in ws.iter_rows():
-                    for cell in row:
-                        if isinstance(cell.value, str) and "{{" in cell.value:
-                            template = Template(cell.value)
-                            cell.value = template.render(context)
+            for row in ws.iter_rows():
+                for cell in row:
+                    if isinstance(cell.value, str) and "{{" in cell.value:
+                        template = Template(cell.value)
+                        cell.value = template.render(context)
+            progress_bar_value += self.progress_bar_export_excel_step_size
+            self.progress_changed.emit(progress_text, progress_bar_value)
 
-                progress_bar_value += self.progress_bar_export_excel_step_size
-                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+            # Create and append the materials list sheet
+            progress_bar_value = self._export_materials_list(
+                workbook=wb,
+                materials_list=materials_list,
+                progress_bar_value=progress_bar_value,
+                progress_bar_process_text=progress_text,
+            )
 
-                # Страница перечня материалов
-                materials_list = self.__get_bid_materials_list()
-
-                progress_bar_value += self.progress_bar_export_excel_step_size
-                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
-
-                self.__export_materials_list(workbook=wb, 
-                                             materials_list=materials_list, 
-                                             progress_bar_value=progress_bar_value, 
-                                             progress_bar_process_text=progress_bar_process_text)
-
-                progress_bar_value += self.progress_bar_export_excel_step_size
-                self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
-
-                wb.save(save_path)
-
-                progress_bar_value = 100
-                self.progress_changed.emit("Экспортирование завершено", progress_bar_value)
-                self.show_notification.emit("info", f"Данные экспортированы в {os.path.basename(save_path)}")
+            # Save the final workbook
+            wb.save(save_path)
+            self.progress_changed.emit("Экспорт завершен", 100)
+            self.show_notification.emit("info", f"Экспорт в {save_filename} успешно завершен")
 
         except Exception as e:
-            self.show_notification.emit("error", f"Произошла ошибка во время сохранения документа. Ошибка: {e}")
-
-    def get_current_date(self):
-        """Функция возвращает текущую дату."""
-        return QDate.currentDate()
-        
-    def get_desktop_path(self):
-        """Функция возвращает путь к папке рабочего стола"""
-        try:
-            # Проверяем сначала путь к рабочему столу в OneDrive с русским названием
-            onedrive_desktop_path = os.path.join(os.path.expanduser("~"), "OneDrive", "Рабочий стол")
-            if os.path.exists(onedrive_desktop_path):
-                return onedrive_desktop_path
-
-            # Проверяем снова путь к рабочему столу в OneDrive
-            onedrive_desktop_path = os.path.join(os.path.expanduser("~"), "OneDrive", "Desktop")
-            if os.path.exists(onedrive_desktop_path):
-                return onedrive_desktop_path
-            
-            # Если не найден, используем стандартный путь
-            desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
-            return desktop_path
-        except Exception as e:
-            self.show_notification.emit("error", f"Произошла ошибка при получении пути к папке Desktop: {e}")
-            return
-    
-    def export_in_thread(self, document_type, save_folder_path):
-        """Функция запускает процесс экспорта документа в отдельном потоке."""
-        if len(save_folder_path) == 0:
-            save_folder_path = self.get_desktop_path()
-
-        try:
-            thread = threading.Thread(target=self.__export_to_excel, args=(document_type, save_folder_path,))
-            thread.daemon = True
-            thread.start()
-            return thread
-        
-        except Exception as e:
-            self.show_notification.emit("error", f"Произошла ошибка во время запуска потока экспорта документа: {e}")
-            return
+            self.progress_changed.emit("Экспорт не удался", 100)
+            self.show_notification.emit(
+                "error", f"Произошла ошибка при сохранении документа: {e}"
+            )

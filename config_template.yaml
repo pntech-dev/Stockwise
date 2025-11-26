@@ -1,0 +1,43 @@
+path_to_products_folder: '' # Path to the products folder on the server
+server_program_path: '' # Path to the program on the server
+
+# Path to the documents templates folder
+# By default, in the root folder of the program
+templates_folder_path: 'templates'
+
+program_name: 'Stockwise' # Program name
+program_version_number: '2.1.0' # Program version
+
+
+
+# List of people from whom the document is received
+signature_from_human:
+- ''
+
+# List of positions of people from whom the document is received
+signature_from_position:
+- ''
+
+# List of people to whom the document is received
+signature_whom_human:
+- ''
+
+# List of positions of people to whom the document is received
+signature_whom_position:
+- ''
+
+# Blacklist of the memo
+document_blacklist:
+- ''
+
+# Application Blacklist
+bid_blacklist:
+- ''
+
+# Whitelist of the memo
+document_whitelist:
+- ''
+
+# Application whitelist
+bid_whitelist:
+- ''
