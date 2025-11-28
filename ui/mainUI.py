@@ -33,6 +33,9 @@ class Ui_MainWindow(object):
 "    color: #1F2937;\n"
 "}\n"
 "\n"
+"\n"
+"/* PushButton */\n"
+"\n"
 "QPushButton {\n"
 "    background-color: transparent;\n"
 "    border-radius: 6px;\n"
@@ -57,6 +60,9 @@ class Ui_MainWindow(object):
 "    color: #D3DEF5;\n"
 "}\n"
 "\n"
+"\n"
+"/* LineEdit */\n"
+"\n"
 "QLineEdit {\n"
 "    background-color: white;\n"
 "    border-radius: 6px;\n"
@@ -73,6 +79,9 @@ class Ui_MainWindow(object):
 "    border: 1px solid #F5F8FF;\n"
 "    color: #D3DEF5;\n"
 "}\n"
+"\n"
+"\n"
+"/* SpinBox */\n"
 "\n"
 "QSpinBox {\n"
 "    background-color: white;\n"
@@ -100,28 +109,14 @@ class Ui_MainWindow(object):
 "    background: transparent;\n"
 "}\n"
 "\n"
-"QProgressBar {\n"
-"    border: 1px solid #DBEAFE;\n"
-"    border-radius: 6px;\n"
-"    background-color: white;\n"
-"    text-align: center;\n"
-"}\n"
 "\n"
-"QProgressBar::chunk {\n"
-"    background-color: #10B981;\n"
-"    border-radius: 6px;\n"
-"}\n"
-"\n"
-"QProgressBar[error=\"true\"]::chunk {\n"
-"    background-color: #EF4444;\n"
-"}\n"
+"/* CheckBox */\n"
 "\n"
 "QCheckBox{\n"
 "    color: #0F172A;\n"
 "    font-weight: normal;\n"
 "    spacing: 8px;\n"
 "}\n"
-"\n"
 "\n"
 "QCheckBox::indicator {\n"
 "    width: 14px;\n"
@@ -153,7 +148,105 @@ class Ui_MainWindow(object):
 "\n"
 "QCheckBox:disabled {\n"
 "    color: #64748B;\n"
-"}")
+"}\n"
+"\n"
+"\n"
+"/* TableWidget */\n"
+"\n"
+"QTableView,\n"
+"QTableWidget {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #d7dde9;\n"
+"    border-radius: 6px;\n"
+"    gridline-color: #e1e6f2;\n"
+"    selection-background-color: #2563EB;\n"
+"    selection-color: #ffffff;\n"
+"    alternate-background-color: #fafbff;\n"
+"    color: #1f2937;\n"
+"}\n"
+"\n"
+"QTableView::item,\n"
+"QTableWidget::item {\n"
+"    padding: 4px 8px;\n"
+"}\n"
+"\n"
+"QTableView::item:selected,\n"
+"QTableWidget::item:selected {\n"
+"    background-color: #2563EB;\n"
+"    color: #ffffff;\n"
+"}\n"
+"\n"
+"QTableView::item:hover:!selected,\n"
+"QTableWidget::item:hover:!selected {\n"
+"    background-color: #eef2fb;\n"
+"}\n"
+"\n"
+"QHeaderView::section {\n"
+"    background-color: #f6f7fb;\n"
+"    color: #374151;\n"
+"    padding: 4px 6px;\n"
+"    border: none;\n"
+"    border-right: 1px solid #e1e6f2;\n"
+"    border-bottom: 1px solid #d7dde9;\n"
+"    font-weight: 600;\n"
+"}\n"
+"\n"
+"QHeaderView::section:vertical {\n"
+"    background-color: #f2f4fa;\n"
+"    color: #4b5563;\n"
+"    padding: 2px 4px;\n"
+"    font-weight: 600;\n"
+"}\n"
+"\n"
+"QTableCornerButton::section {\n"
+"    background-color: #f6f7fb;\n"
+"    border: none;\n"
+"    border-right: 1px solid #d7dde9;\n"
+"    border-bottom: 1px solid #d7dde9;\n"
+"}\n"
+"\n"
+"QScrollBar:vertical {\n"
+"    background: transparent;\n"
+"    width: 10px;\n"
+"    margin: 2px 0 2px 0;\n"
+"}\n"
+"\n"
+"QScrollBar::handle:vertical {\n"
+"    background: #d3d9e8;\n"
+"    min-height: 20px;\n"
+"    border-radius: 4px;\n"
+"}\n"
+"\n"
+"QScrollBar::handle:vertical:hover {\n"
+"    background: #c5ccdd;\n"
+"}\n"
+"\n"
+"QScrollBar::add-line:vertical,\n"
+"QScrollBar::sub-line:vertical {\n"
+"    height: 0;\n"
+"}\n"
+"\n"
+"QScrollBar:horizontal {\n"
+"    background: transparent;\n"
+"    height: 10px;\n"
+"    margin: 0 2px 0 2px;\n"
+"}\n"
+"\n"
+"QScrollBar::handle:horizontal {\n"
+"    background: #d3d9e8;\n"
+"    min-width: 20px;\n"
+"    border-radius: 4px;\n"
+"}\n"
+"\n"
+"QScrollBar::handle:horizontal:hover {\n"
+"    background: #c5ccdd;\n"
+"}\n"
+"\n"
+"QScrollBar::add-line:horizontal,\n"
+"QScrollBar::sub-line:horizontal {\n"
+"    width: 0;\n"
+"}\n"
+"")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setStyleSheet("")
         self.centralwidget.setObjectName("centralwidget")
@@ -167,7 +260,7 @@ class Ui_MainWindow(object):
         self.search_frame.setObjectName("search_frame")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.search_frame)
         self.verticalLayout_2.setContentsMargins(16, 16, 16, 16)
-        self.verticalLayout_2.setSpacing(8)
+        self.verticalLayout_2.setSpacing(16)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.search_line_frame = QtWidgets.QFrame(self.search_frame)
         self.search_line_frame.setFrameShape(QtWidgets.QFrame.NoFrame)
@@ -185,29 +278,53 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addWidget(self.search_line_label)
         self.search_line_lineEdit = QtWidgets.QLineEdit(self.search_line_frame)
         self.search_line_lineEdit.setEnabled(True)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.search_line_lineEdit.sizePolicy().hasHeightForWidth())
+        self.search_line_lineEdit.setSizePolicy(sizePolicy)
         self.search_line_lineEdit.setMinimumSize(QtCore.QSize(0, 0))
         self.search_line_lineEdit.setMaximumSize(QtCore.QSize(16777215, 16777215))
         font = QtGui.QFont()
         font.setFamily("Segoe UI")
         font.setPointSize(12)
         self.search_line_lineEdit.setFont(font)
+        self.search_line_lineEdit.setClearButtonEnabled(True)
         self.search_line_lineEdit.setObjectName("search_line_lineEdit")
         self.horizontalLayout.addWidget(self.search_line_lineEdit)
-        self.search_line_clear_pushButton = QtWidgets.QPushButton(self.search_line_frame)
-        self.search_line_clear_pushButton.setEnabled(False)
-        self.search_line_clear_pushButton.setMinimumSize(QtCore.QSize(100, 0))
-        self.search_line_clear_pushButton.setMaximumSize(QtCore.QSize(100, 16777215))
+        self.search_filters_pushButton = QtWidgets.QPushButton(self.search_line_frame)
+        self.search_filters_pushButton.setEnabled(True)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.search_filters_pushButton.sizePolicy().hasHeightForWidth())
+        self.search_filters_pushButton.setSizePolicy(sizePolicy)
+        self.search_filters_pushButton.setMinimumSize(QtCore.QSize(0, 0))
+        self.search_filters_pushButton.setMaximumSize(QtCore.QSize(16777215, 16777215))
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setKerning(True)
-        self.search_line_clear_pushButton.setFont(font)
-        self.search_line_clear_pushButton.setObjectName("search_line_clear_pushButton")
-        self.horizontalLayout.addWidget(self.search_line_clear_pushButton)
+        self.search_filters_pushButton.setFont(font)
+        self.search_filters_pushButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.search_filters_pushButton.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/default.svg"), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/disabled.svg"), QtGui.QIcon.Disabled, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/disabled.svg"), QtGui.QIcon.Disabled, QtGui.QIcon.On)
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/hover.svg"), QtGui.QIcon.Active, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/hover.svg"), QtGui.QIcon.Active, QtGui.QIcon.On)
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/clicked.svg"), QtGui.QIcon.Selected, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/clicked.svg"), QtGui.QIcon.Selected, QtGui.QIcon.On)
+        self.search_filters_pushButton.setIcon(icon)
+        self.search_filters_pushButton.setIconSize(QtCore.QSize(18, 20))
+        self.search_filters_pushButton.setObjectName("search_filters_pushButton")
+        self.horizontalLayout.addWidget(self.search_filters_pushButton)
         self.verticalLayout_2.addWidget(self.search_line_frame)
         self.search_in_materials_checkBox = QtWidgets.QCheckBox(self.search_frame)
         font = QtGui.QFont()
         font.setPointSize(12)
         self.search_in_materials_checkBox.setFont(font)
+        self.search_in_materials_checkBox.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.search_in_materials_checkBox.setObjectName("search_in_materials_checkBox")
         self.verticalLayout_2.addWidget(self.search_in_materials_checkBox)
         self.verticalLayout_6.addWidget(self.search_frame)
@@ -242,6 +359,7 @@ class Ui_MainWindow(object):
         font.setFamily("Segoe UI")
         font.setPointSize(12)
         self.norms_calculations_spinBox.setFont(font)
+        self.norms_calculations_spinBox.setCursor(QtGui.QCursor(QtCore.Qt.IBeamCursor))
         self.norms_calculations_spinBox.setMaximum(999999)
         self.norms_calculations_spinBox.setProperty("value", 1)
         self.norms_calculations_spinBox.setObjectName("norms_calculations_spinBox")
@@ -262,10 +380,13 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(12)
         self.data_tableWidget.setFont(font)
+        self.data_tableWidget.viewport().setProperty("cursor", QtGui.QCursor(QtCore.Qt.ArrowCursor))
+        self.data_tableWidget.setEditTriggers(QtWidgets.QAbstractItemView.AnyKeyPressed|QtWidgets.QAbstractItemView.EditKeyPressed)
+        self.data_tableWidget.setAlternatingRowColors(True)
         self.data_tableWidget.setObjectName("data_tableWidget")
         self.data_tableWidget.setColumnCount(0)
         self.data_tableWidget.setRowCount(0)
-        self.data_tableWidget.horizontalHeader().setStretchLastSection(True)
+        self.data_tableWidget.horizontalHeader().setStretchLastSection(False)
         self.data_tableWidget.verticalHeader().setStretchLastSection(True)
         self.verticalLayout.addWidget(self.data_tableWidget)
         self.verticalLayout_6.addWidget(self.table_frame)
@@ -280,8 +401,19 @@ class Ui_MainWindow(object):
         self.create_document_frame.setObjectName("create_document_frame")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.create_document_frame)
         self.verticalLayout_5.setContentsMargins(16, 16, 16, 16)
-        self.verticalLayout_5.setSpacing(8)
+        self.verticalLayout_5.setSpacing(16)
         self.verticalLayout_5.setObjectName("verticalLayout_5")
+        self.export_pushButton = QtWidgets.QPushButton(self.create_document_frame)
+        self.export_pushButton.setEnabled(False)
+        self.export_pushButton.setMinimumSize(QtCore.QSize(0, 0))
+        self.export_pushButton.setMaximumSize(QtCore.QSize(16777215, 16777215))
+        font = QtGui.QFont()
+        font.setPointSize(12)
+        font.setKerning(True)
+        self.export_pushButton.setFont(font)
+        self.export_pushButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.export_pushButton.setObjectName("export_pushButton")
+        self.verticalLayout_5.addWidget(self.export_pushButton)
         self.create_document_pushButton = QtWidgets.QPushButton(self.create_document_frame)
         self.create_document_pushButton.setEnabled(False)
         self.create_document_pushButton.setMinimumSize(QtCore.QSize(0, 24))
@@ -291,6 +423,7 @@ class Ui_MainWindow(object):
         font.setBold(True)
         font.setWeight(75)
         self.create_document_pushButton.setFont(font)
+        self.create_document_pushButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.create_document_pushButton.setStyleSheet("QPushButton {\n"
 "    background-color: #2563EB;\n"
 "    border-radius: 6px;\n"
@@ -314,16 +447,6 @@ class Ui_MainWindow(object):
 "}")
         self.create_document_pushButton.setObjectName("create_document_pushButton")
         self.verticalLayout_5.addWidget(self.create_document_pushButton)
-        self.export_pushButton = QtWidgets.QPushButton(self.create_document_frame)
-        self.export_pushButton.setEnabled(False)
-        self.export_pushButton.setMinimumSize(QtCore.QSize(0, 0))
-        self.export_pushButton.setMaximumSize(QtCore.QSize(16777215, 16777215))
-        font = QtGui.QFont()
-        font.setPointSize(12)
-        font.setKerning(True)
-        self.export_pushButton.setFont(font)
-        self.export_pushButton.setObjectName("export_pushButton")
-        self.verticalLayout_5.addWidget(self.export_pushButton)
         self.verticalLayout_6.addWidget(self.create_document_frame)
         MainWindow.setCentralWidget(self.centralwidget)
 
@@ -334,9 +457,9 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Stockwise"))
         self.search_line_label.setText(_translate("MainWindow", "Поиск:"))
-        self.search_line_lineEdit.setPlaceholderText(_translate("MainWindow", "БВВ.01"))
-        self.search_line_clear_pushButton.setText(_translate("MainWindow", "Очистить"))
+        self.search_line_lineEdit.setPlaceholderText(_translate("MainWindow", "Поиск по названию..."))
         self.search_in_materials_checkBox.setText(_translate("MainWindow", "Поиск по материалам изделия"))
         self.norms_calculations_lalabel.setText(_translate("MainWindow", "Нормы на количество:"))
-        self.create_document_pushButton.setText(_translate("MainWindow", "Создать документ"))
         self.export_pushButton.setText(_translate("MainWindow", "Экспортировать"))
+        self.create_document_pushButton.setText(_translate("MainWindow", "Создать документ"))
+import resources.resources_rc

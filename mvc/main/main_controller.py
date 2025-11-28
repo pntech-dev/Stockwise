@@ -1,11 +1,15 @@
 import sys
 
-from PyQt5.QtCore import QStringListModel
+from PyQt5.QtCore import Qt, QStringListModel
 
 from classes import Notification
 from mvc.document import create_document_window
 from utils.proxy_models import CustomFilterProxyModel
 
+
+NOM_KEY = "Номенклатура"
+QTY_KEY = "Количество"
+UNIT_KEY = "Ед. изм."
 
 
 class MainController:
@@ -26,6 +30,12 @@ class MainController:
         self.model = model
         self.view = view
         self.is_highlighting: bool = False
+        self.current_table_data: list[dict] = []
+        self.search_filters: dict[str, bool] = {
+            "name": True,
+            "quantity": False,
+            "unit": False,
+        }
 
         self.document_window = None  # Reference to the document window
 
@@ -50,33 +60,38 @@ class MainController:
 
         # Connect view signals to controller slots
         self.view.search_field_changed(self.on_search_field_changed)
-        self.view.clear_button_clicked(self.on_clear_button_clicked)
         self.view.create_document_button_clicked(self.on_create_document_button_clicked)
         self.view.norms_calculations_changed(self.on_norms_calculations_changed)
         self.view.export_button_clicked(self.on_export_button_clicked)
         self.view.search_in_materials_checkbox_state_changed(
             self.on_search_in_materials_checkbox_state_changed
         )
+        self.view.header_checkbox_state_changed(self.on_header_checkbox_state_changed)
+        self.view.setup_search_filters_menu(
+            self.search_filters, self.on_search_filter_toggled
+        )
+        self.view.set_filters_button_enabled(False)
+        self._update_search_placeholder()
 
         # Connect model signals to controller slots
         self.model.show_notification.connect(self.show_notification)
 
-    def show_notification(self, msg_type: str, text: str) -> None:
-        """Shows a notification message.
+        # Disable header checkbox until data appears
+        self.view.set_header_checkbox_enabled(False)
 
-        This is a slot connected to the model's `show_notification` signal.
+    def show_notification(self, msg_type: str, text: str) -> None:
+        """Shows a notification message and re-enables the window.
 
         Args:
-            msg_type: The type of message ("info", "warning", "error").
-            text: The notification text to display.
+            msg_type: Notification category such as ``"info"`` or ``"error"``.
+            text: Message body to display.
         """
         Notification().show_notification_message(msg_type=msg_type, text=text)
         self.view.set_window_enabled_state(enabled=True)  # Re-enable the window
 
     def on_search_field_changed(self) -> None:
-        """Handles text changes in the search field to update the table."""
+        """Refreshes table data when the search field text changes."""
         search_text = self.view.get_search_field_text()
-        self.view.update_clear_button_state(enabled=bool(search_text))
 
         data_for_view = []
 
@@ -93,6 +108,7 @@ class MainController:
             )
 
             if product_tuple:
+                is_new_product = product_name != self.model.current_product
                 self.model.current_product = product_name
                 semi_finished_products = self.model.get_semi_finished_products(
                     product_tuple
@@ -102,35 +118,53 @@ class MainController:
                         semi_finished_products
                     )
                     self.model.current_product_materials = product_materials
+                    self.model.sync_material_selection(
+                        product_materials, reset=is_new_product
+                    )
                     data_for_view = product_materials
+                else:
+                    self.model.sync_material_selection([], reset=is_new_product)
+                    self.model.current_product_materials = []
+                    self.model.current_semi_finished_products = []
+            else:
+                self.model.current_product_materials = []
+                self.model.current_semi_finished_products = []
+                self.model.sync_material_selection([], reset=True)
         # Otherwise, filter the materials of the current product
         else:
-            search_words = search_text.strip().lower().split()
-            data_for_view = [
-                item
-                for item in self.model.current_product_materials
-                if all(word in item["Номенклатура"].lower() for word in search_words)
-            ]
-            self.model.search_in_materials_data = data_for_view
+            active_filters = [key for key, value in self.search_filters.items() if value]
+            if not active_filters:
+                data_for_view = self.model.current_product_materials
+                self.model.search_in_materials_data = data_for_view
+            else:
+                search_words = search_text.strip().lower().split()
+                data_for_view = [
+                    item
+                    for item in self.model.current_product_materials
+                    if self._material_matches_search(item, search_words)
+                ]
+                self.model.search_in_materials_data = data_for_view
 
-        self.view.update_table_widget_data(data=data_for_view)
-        buttons_enabled = bool(data_for_view)
-        self.view.update_create_document_button_state(enabled=buttons_enabled)
-        self.view.update_export_button_state(enabled=buttons_enabled)
-
-    def on_clear_button_clicked(self) -> None:
-        """Handles the click event of the clear search field button."""
-        self.view.clear_search_field()
-        self.view.update_clear_button_state(enabled=False)
+        self._update_table(data_for_view)
 
     def on_create_document_button_clicked(self) -> None:
-        """Handles the create document button click.
-
-        Opens the document creation window if data is available.
-        """
+        """Opens the document window for the selected materials."""
         if not self.model.current_product_materials:
             self.show_notification(
-                "error", "Нет данных для экспорта.\nСначала выберите продукт."
+                "error",
+                "Нет данных для документа. Выберите товар и повторите попытку.",
+            )
+            return
+
+        selected_materials = [
+            item
+            for item in self.model.current_product_materials
+            if self.model.material_selection.get(item[NOM_KEY], True)
+        ]
+        if not selected_materials:
+            self.show_notification(
+                "error",
+                "Нет выбранных материалов для документа. Отметьте хотя бы один чекбокс.",
             )
             return
 
@@ -138,7 +172,7 @@ class MainController:
             self.document_window = create_document_window(
                 product_name=self.model.current_product,
                 norms_calculations_value=self.model.norms_calculations_value,
-                materials=self.model.current_product_materials,
+                materials=selected_materials,
                 current_product_path=self.model.current_product_path,
             )
             self.document_window.show()
@@ -146,30 +180,43 @@ class MainController:
             self.view.update_create_document_button_state(enabled=False)
 
     def on_document_window_destroyed(self) -> None:
-        """Handles the destruction of the document window.
-
-        Resets the window reference and re-enables the create document button.
-        """
+        """Resets state when the document window is closed."""
         self.document_window = None
         self.view.update_create_document_button_state(enabled=True)
 
     def on_norms_calculations_changed(self, value: int) -> None:
-        """Handles changes to the norms calculation value.
+        """Applies a new norms multiplier and refreshes the table.
 
         Args:
-            value: The new value for the calculation norm.
+            value: Multiplier used to scale material quantities.
         """
         self.model.norms_calculations_value = value
-        self.on_search_field_changed()  # Update the data in the table
+        if self.model.current_semi_finished_products:
+            self.model.recalculate_current_materials()
+            if self.model.search_in_materials:
+                search_text = self.view.get_search_field_text()
+                active_filters = [key for key, val in self.search_filters.items() if val]
+                if not active_filters:
+                    data_for_view = self.model.current_product_materials
+                else:
+                    search_words = search_text.strip().lower().split()
+                    data_for_view = [
+                        item
+                        for item in self.model.current_product_materials
+                        if self._material_matches_search(item, search_words)
+                    ]
+                self.model.search_in_materials_data = data_for_view
+            else:
+                data_for_view = self.model.current_product_materials
+            self._update_table(data_for_view)
+        else:
+            self.on_search_field_changed()  # Update the data in the table
 
     def on_completer_highlighted(self, text: str) -> None:
         """Sets a flag when a completer item is highlighted.
 
-        This helps prevent the filter from re-running when the user is just
-        navigating the suggestion list.
-
         Args:
-            text: The highlighted text (not used).
+            text: Highlighted completer text (unused).
         """
         self.is_highlighting = True
 
@@ -177,28 +224,39 @@ class MainController:
         """Updates the completer filter, ignoring changes from highlighting.
 
         Args:
-            text: The current text in the line edit.
+            text: Current text in the search field.
         """
         if self.is_highlighting:
             self.is_highlighting = False
             return
         self.proxy_model.setFilterRegExp(text)
 
+    def on_search_filter_toggled(self, filter_key: str, is_checked: bool) -> None:
+        """Updates search filter flags and refreshes material filtering if needed."""
+        if filter_key not in self.search_filters:
+            return
+
+        self.search_filters[filter_key] = is_checked
+
+        if self.model.search_in_materials:
+            self.on_search_field_changed()
+        else:
+            # Keep UI in sync if toggled while disabled (shouldn't happen, but safe guard)
+            self.view.set_filter_checked(filter_key, False)
+        self._update_search_placeholder()
+
     def on_export_button_clicked(self) -> None:
-        """Handles the click event of the export button."""
+        """Exports the current selection to Excel."""
         self.view.set_window_enabled_state(enabled=False)
         self.model.export_data()
 
-    def on_search_in_materials_checkbox_state_changed(self, state: int) -> None:
-        """Handles the state change of the 'search in materials' checkbox.
-
-        Switches the search mode and updates the completer model accordingly.
+    def on_search_in_materials_checkbox_state_changed(self, state: bool) -> None:
+        """Toggles between product search and in-material search modes.
 
         Args:
-            state: The new checked state from the checkbox signal
-                   (0 for Unchecked, 2 for Checked).
+            state: Checkbox state; True enables searching within materials.
         """
-        is_checked = bool(state)
+        is_checked = state
         self.model.search_in_materials = is_checked
 
         if is_checked:  # Switched to searching in materials
@@ -206,20 +264,130 @@ class MainController:
             self.model.current_product = product_name
             self.view.clear_search_field()
             self.view.set_search_in_materials_checkbox_text(text=product_name)
+            self.view.set_filters_button_enabled(True)
+            self._update_search_placeholder()
 
-            material_names = [
-                item["Номенклатура"] for item in self.model.current_product_materials
-            ]
+            material_names = [item[NOM_KEY] for item in self.model.current_product_materials]
             string_list_model = QStringListModel(material_names)
             self.proxy_model.setSourceModel(string_list_model)
         else:  # Switched back to searching for products
             self.view.set_search_field_text(self.model.current_product)
             self.model.current_product = ""
             self.view.set_search_in_materials_checkbox_text(text="")
+            self.view.hide_search_filters_menu()
+            self.view.set_filters_button_enabled(False)
+            self._update_search_placeholder()
 
             suggestions_lst = [" ".join(name) for name in self.model.products_names]
             string_list_model = QStringListModel(suggestions_lst)
             self.proxy_model.setSourceModel(string_list_model)
+
+        self._refresh_table()
+
+    def on_row_checkbox_state_changed(self, material_name: str, is_checked: bool) -> None:
+        """Updates selection map when a row checkbox is toggled.
+
+        Args:
+            material_name: Name of the material tied to the row.
+            is_checked: Whether the row is now selected.
+        """
+        self.model.set_material_selected(material_name, is_checked)
+        self._update_buttons_and_header()
+
+    def on_header_checkbox_state_changed(self, state: int) -> None:
+        """Selects or deselects all materials when the header checkbox changes.
+
+        Args:
+            state: Qt check state from the header checkbox.
+        """
+        if not self.model.current_product_materials:
+            self.view.set_header_checkbox_state(Qt.Unchecked)
+            return
+
+        select_all = state != Qt.Unchecked
+        self.model.set_all_materials_selected(select_all)
+        self._refresh_table()
+
+    def _material_matches_search(self, item: dict, search_words: list[str]) -> bool:
+        """Checks if a material matches all search words across active filters."""
+        if not search_words:
+            return True
+
+        fields: list[str] = []
+        if self.search_filters.get("name"):
+            fields.append(str(item.get(NOM_KEY, "")).lower())
+        if self.search_filters.get("quantity"):
+            fields.append(str(item.get(QTY_KEY, "")).lower())
+        if self.search_filters.get("unit"):
+            fields.append(str(item.get(UNIT_KEY, "")).lower())
+
+        if not fields:
+            return True
+
+        return all(any(word in value for value in fields) for word in search_words)
+
+    def _update_search_placeholder(self) -> None:
+        """Sets placeholder text based on mode and active filters."""
+        if self.model.search_in_materials:
+            active = [key for key, value in self.search_filters.items() if value]
+            self.view.set_search_field_enabled(bool(active))
+        else:
+            active = ["name"]
+            self.view.set_search_field_enabled(True)
+        self.view.update_search_placeholder(active)
+
+    def _update_table(self, data: list[dict]) -> None:
+        """Refreshes table data, buttons, and header checkbox state.
+
+        Args:
+            data: Rows to display in the materials table.
+        """
+        self.current_table_data = data
+        any_selected = any(
+            self.model.material_selection.get(item[NOM_KEY], True) for item in data
+        )
+        self.view.update_table_widget_data(
+            data=data,
+            selection=self.model.material_selection,
+            on_row_checkbox_changed=self.on_row_checkbox_state_changed,
+        )
+        self._update_buttons_and_header()
+
+    def _refresh_table(self) -> None:
+        """Repaints table rows to reflect updated checkbox states."""
+        self._update_table(self.current_table_data)
+
+    def _update_buttons_and_header(self) -> None:
+        """Updates action buttons and header checkbox state based on selection."""
+        has_rows = bool(self.current_table_data)
+        any_selected = has_rows and any(
+            self.model.material_selection.get(item[NOM_KEY], True)
+            for item in self.current_table_data
+        )
+        self.view.update_create_document_button_state(enabled=any_selected)
+        self.view.update_export_button_state(enabled=any_selected)
+        self.view.set_header_checkbox_enabled(has_rows)
+        self._update_header_checkbox_state()
+
+    def _update_header_checkbox_state(self) -> None:
+        """Sets header checkbox state based on visible rows."""
+        if not self.current_table_data:
+            self.view.set_header_checkbox_state(Qt.Unchecked)
+            return
+
+        checked_count = 0
+        for item in self.current_table_data:
+            if self.model.material_selection.get(item[NOM_KEY], True):
+                checked_count += 1
+
+        if checked_count == len(self.current_table_data):
+            state = Qt.Checked
+        elif checked_count == 0:
+            state = Qt.Unchecked
+        else:
+            state = Qt.PartiallyChecked
+
+        self.view.set_header_checkbox_state(state)
 
     def _check_program_version(self) -> None:
         """Checks the program version and prompts for updates if necessary."""
@@ -229,11 +397,12 @@ class MainController:
         if is_version_ok is None:
             action = Notification().show_action_message(
                 msg_type="error",
-                title="Version Check Error",
-                text="An error occurred during the version check!\n" 
-                "This may be related to the configuration file path.\n" 
-                "Do you want to open the configuration file?",
-                buttons=["Yes", "No"],
+                title="Ошибка проверки версии",
+                text=(
+                    "Не удалось проверить наличие обновлений.\n"
+                    "Открыть config.yaml для проверки пути?"
+                ),
+                buttons=["Открыть config", "Закрыть"],
             )
             if action:
                 self.model.open_config_file()
@@ -243,10 +412,9 @@ class MainController:
         elif not is_version_ok:
             action = Notification().show_action_message(
                 msg_type="warning",
-                title="Update Available",
-                text="A new version of the program has been detected.\n" 
-                "Do you want to update?",
-                buttons=["Update", "Close"],
+                title="Доступна новая версия",
+                text="Найдена новая версия программы. Обновить сейчас?",
+                buttons=["Обновить", "Выход"],
             )
             if action:
                 self.model.update_program()

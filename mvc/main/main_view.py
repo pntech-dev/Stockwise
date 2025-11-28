@@ -1,5 +1,23 @@
-from PyQt5.QtCore import QAbstractItemModel
-from PyQt5.QtWidgets import QCompleter, QHeaderView, QLineEdit, QTableWidgetItem
+from PyQt5.QtCore import QAbstractItemModel, Qt
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QAction,
+    QCheckBox,
+    QCompleter,
+    QHeaderView,
+    QHBoxLayout,
+    QLineEdit,
+    QMenu,
+    QTableWidgetItem,
+    QWidgetAction,
+    QWidget,
+)
+
+from ui import styles
+
+NOM_KEY = "Номенклатура"
+QTY_KEY = "Количество"
+UNIT_KEY = "Ед. изм."
 
 
 class MainView:
@@ -19,13 +37,29 @@ class MainView:
         self.ui = ui
 
         # Table setup
-        headers = ["Номенклатура", "Количество", "Ед. изм."]
+        headers = ["", NOM_KEY, QTY_KEY, UNIT_KEY]
         self.ui.data_tableWidget.setColumnCount(len(headers))
         self.ui.data_tableWidget.setHorizontalHeaderLabels(headers)
         header = self.ui.data_tableWidget.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.ui.data_tableWidget.setSelectionMode(QAbstractItemView.NoSelection)
+        self._setup_header_checkbox()
+        self.filter_menu = None
+        self.filter_actions: dict[str, QWidgetAction] = {}
+        self.filter_checkboxes: dict[str, QCheckBox] = {}
+        self.filter_labels = {
+            "name": "По названию",
+            "quantity": "По количеству",
+            "unit": "По единицам измерения",
+        }
+        self.placeholder_labels = {
+            "name": "названию",
+            "quantity": "количеству",
+            "unit": "единицам измерения",
+        }
 
     def get_search_field_text(self) -> str:
         """Returns the text from the search field."""
@@ -48,15 +82,101 @@ class MainView:
         completer.setCaseSensitivity(0)  # Case-insensitive
         completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
         self.ui.search_line_lineEdit.setCompleter(completer)
+        popup = completer.popup()
+        font = self.ui.search_line_lineEdit.font()
+        font.setPointSize(12)
+        popup.setFont(font)
+        popup.setStyleSheet(styles.FILTER_POPUP_LIST_STYLE)
         return completer
 
     def set_window_enabled_state(self, enabled: bool) -> None:
-        """Sets the enabled state of the main window's central widget."""
+        """Sets the enabled state of the main window's central widget.
+
+        Args:
+            enabled: Whether the central widget should accept input.
+        """
         self.ui.centralwidget.setEnabled(enabled)
 
     def set_search_field_text(self, text: str) -> None:
-        """Sets the text in the search field."""
+        """Sets the text in the search field.
+
+        Args:
+            text: New value for the search input.
+        """
         self.ui.search_line_lineEdit.setText(text)
+
+    def setup_search_filters_menu(self, initial_states: dict[str, bool], on_filter_toggled) -> None:
+        """Initializes the search filters popover with checkable actions.
+
+        Args:
+            initial_states: Mapping of filter keys to their default checked state.
+            on_filter_toggled: Callback invoked when a filter action is toggled.
+        """
+        self.filter_menu = QMenu(self.ui.search_filters_pushButton)
+        self.filter_menu.setStyleSheet(styles.FILTER_MENU_STYLE)
+        font = self.ui.search_line_lineEdit.font()
+        font.setPointSize(12)
+        self.filter_menu.setFont(font)
+        self.filter_actions.clear()
+        self.filter_checkboxes.clear()
+
+        for key, label in self.filter_labels.items():
+            checkbox = QCheckBox(label)
+            checkbox.setFont(font)
+            checkbox.setChecked(initial_states.get(key, False))
+            checkbox.stateChanged.connect(
+                lambda state, k=key: on_filter_toggled(k, state == Qt.Checked)
+            )
+            action = QWidgetAction(self.filter_menu)
+            action.setDefaultWidget(checkbox)
+            self.filter_menu.addAction(action)
+            self.filter_actions[key] = action
+            self.filter_checkboxes[key] = checkbox
+
+        self.ui.search_filters_pushButton.clicked.connect(self.show_search_filters_menu)
+
+    def show_search_filters_menu(self) -> None:
+        """Shows the filters popover anchored to the search button."""
+        if not self.filter_menu:
+            return
+        button = self.ui.search_filters_pushButton
+        self.filter_menu.exec_(button.mapToGlobal(button.rect().bottomLeft()))
+
+    def set_filter_checked(self, filter_key: str, checked: bool) -> None:
+        """Updates a filter action's check state without emitting signals."""
+        action = self.filter_actions.get(filter_key)
+        checkbox = self.filter_checkboxes.get(filter_key)
+        if not action or not checkbox:
+            return
+        checkbox.blockSignals(True)
+        checkbox.setChecked(checked)
+        checkbox.blockSignals(False)
+
+    def update_search_placeholder(self, active_filters: list[str]) -> None:
+        """Updates the search field placeholder based on active filters."""
+        labels = [
+            self.placeholder_labels[key]
+            for key in active_filters
+            if key in self.placeholder_labels
+        ]
+        if labels:
+            placeholder = f"Поиск по {', '.join(labels)}..."
+        else:
+            placeholder = "Отключены фильтры поиска"
+        self.ui.search_line_lineEdit.setPlaceholderText(placeholder)
+
+    def hide_search_filters_menu(self) -> None:
+        """Hides the filter menu if it is open."""
+        if self.filter_menu and self.filter_menu.isVisible():
+            self.filter_menu.hide()
+
+    def set_filters_button_enabled(self, enabled: bool) -> None:
+        """Enables or disables the filters button."""
+        self.ui.search_filters_pushButton.setEnabled(enabled)
+
+    def set_search_field_enabled(self, enabled: bool) -> None:
+        """Enables or disables the search input."""
+        self.ui.search_line_lineEdit.setEnabled(enabled)
 
     def set_search_in_materials_checkbox_text(self, text: str) -> None:
         """Sets the text of the 'search in materials' checkbox.
@@ -64,19 +184,22 @@ class MainView:
         Args:
             text: The product name to display, or an empty string to reset.
         """
-        base_text = "Search within product materials"
+        base_text = "Поиск по материалам изделия"
         checkbox_text = base_text if not text else f"{base_text}: {text}"
         self.ui.search_in_materials_checkBox.setText(checkbox_text)
 
-    def update_clear_button_state(self, enabled: bool) -> None:
-        """Updates the enabled state of the clear button."""
-        self.ui.search_line_clear_pushButton.setEnabled(enabled)
-
-    def update_table_widget_data(self, data: list[dict]) -> None:
+    def update_table_widget_data(
+        self,
+        data: list[dict],
+        selection: dict[str, bool],
+        on_row_checkbox_changed,
+    ) -> None:
         """Updates the data in the materials table.
 
         Args:
             data: A list of dictionaries, where each dictionary is a row.
+            selection: Mapping of material names to their checkbox state.
+            on_row_checkbox_changed: Callback invoked when a row checkbox changes.
         """
         self.ui.data_tableWidget.setRowCount(0)  # Clear only the rows
 
@@ -84,24 +207,48 @@ class MainView:
         for row_index, item in enumerate(data):
             self.ui.data_tableWidget.insertRow(row_index)
 
+            # Column "Select"
+            material_name = item.get(NOM_KEY, "")
+            checkbox = QCheckBox()
+            checkbox.setChecked(selection.get(material_name, True))
+            checkbox.stateChanged.connect(
+                lambda state, name=material_name: on_row_checkbox_changed(
+                    name, state == Qt.Checked
+                )
+            )
+            checkbox_container = QWidget()
+            layout = QHBoxLayout(checkbox_container)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setAlignment(Qt.AlignCenter)
+            layout.addWidget(checkbox)
+            self.ui.data_tableWidget.setCellWidget(row_index, 0, checkbox_container)
+
             # Column "Nomenclature"
-            nomenclature_item = QTableWidgetItem(item.get("Номенклатура", ""))
-            self.ui.data_tableWidget.setItem(row_index, 0, nomenclature_item)
+            nomenclature_item = QTableWidgetItem(item.get(NOM_KEY, ""))
+            self.ui.data_tableWidget.setItem(row_index, 1, nomenclature_item)
 
             # Column "Quantity"
-            quantity_item = QTableWidgetItem(str(item.get("Количество", "")))
-            self.ui.data_tableWidget.setItem(row_index, 1, quantity_item)
+            quantity_item = QTableWidgetItem(str(item.get(QTY_KEY, "")))
+            self.ui.data_tableWidget.setItem(row_index, 2, quantity_item)
 
             # Column "Unit"
-            unit_item = QTableWidgetItem(item.get("Ед. изм.", ""))
-            self.ui.data_tableWidget.setItem(row_index, 2, unit_item)
+            unit_item = QTableWidgetItem(item.get(UNIT_KEY, ""))
+            self.ui.data_tableWidget.setItem(row_index, 3, unit_item)
 
     def update_create_document_button_state(self, enabled: bool) -> None:
-        """Updates the enabled state of the create document button."""
+        """Updates the enabled state of the create document button.
+
+        Args:
+            enabled: Whether the button should be enabled.
+        """
         self.ui.create_document_pushButton.setEnabled(enabled)
 
     def update_export_button_state(self, enabled: bool) -> None:
-        """Updates the enabled state of the export button."""
+        """Updates the enabled state of the export button.
+
+        Args:
+            enabled: Whether the button should be enabled.
+        """
         self.ui.export_pushButton.setEnabled(enabled)
 
     def clear_search_field(self) -> None:
@@ -115,14 +262,6 @@ class MainView:
             handler: The function to call when the text changes.
         """
         self.ui.search_line_lineEdit.textChanged.connect(handler)
-
-    def clear_button_clicked(self, handler) -> None:
-        """Connects a handler to the clear button's clicked signal.
-
-        Args:
-            handler: The function to call when the button is clicked.
-        """
-        self.ui.search_line_clear_pushButton.clicked.connect(handler)
 
     def create_document_button_clicked(self, handler) -> None:
         """Connects a handler to the create document button's clicked signal.
@@ -159,3 +298,48 @@ class MainView:
         self.ui.search_in_materials_checkBox.stateChanged.connect(
             lambda state: handler(state == 2)
         )
+
+    def header_checkbox_state_changed(self, handler) -> None:
+        """Connects a handler to the header checkbox."""
+        self.header_checkbox.stateChanged.connect(handler)
+
+    def set_header_checkbox_state(self, state: int) -> None:
+        """Sets the header checkbox state without emitting signals.
+
+        Args:
+            state: Qt check state value to apply.
+        """
+        self.header_checkbox.blockSignals(True)
+        self.header_checkbox.setCheckState(state)
+        self.header_checkbox.blockSignals(False)
+
+    def set_header_checkbox_enabled(self, enabled: bool) -> None:
+        """Enables or disables the header checkbox.
+
+        Args:
+            enabled: Whether the checkbox should accept user interaction.
+        """
+        self.header_checkbox.setEnabled(enabled)
+
+    def _setup_header_checkbox(self) -> None:
+        """Initializes the header checkbox and positions it."""
+        header = self.ui.data_tableWidget.horizontalHeader()
+        self.header_checkbox = QCheckBox(header)
+        self.header_checkbox.setTristate(True)
+        self.header_checkbox.setChecked(True)
+        header.sectionResized.connect(self._update_header_checkbox_position)
+        header.sectionMoved.connect(self._update_header_checkbox_position)
+        self._update_header_checkbox_position()
+
+    def _update_header_checkbox_position(self) -> None:
+        """Centers the header checkbox within its section."""
+        header = self.ui.data_tableWidget.horizontalHeader()
+        if header.count() == 0:
+            return
+
+        section_x = header.sectionPosition(0)
+        section_width = header.sectionSize(0)
+        size = self.header_checkbox.sizeHint()
+        x = section_x + (section_width - size.width()) // 2
+        y = (header.height() - size.height()) // 2
+        self.header_checkbox.setGeometry(x, y, size.width(), size.height())

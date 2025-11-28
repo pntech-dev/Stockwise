@@ -6,7 +6,7 @@ server_program_path: '' # Path to the program on the server
 templates_folder_path: 'templates'
 
 program_name: 'Stockwise' # Program name
-program_version_number: '2.1.0' # Program version
+program_version_number: '2.2.0' # Program version
 
 
 

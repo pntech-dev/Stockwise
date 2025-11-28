@@ -89,7 +89,12 @@ class DocumentView:
         self.ui.save_file_path_line_lineEdit.setText(path)
 
     def set_export_button_state(self, enabled: bool) -> None:
-        """Sets the enabled state of the export button."""
+        """
+        Sets the enabled state of the export button.
+        
+        Args:
+            enabled (bool): True to enable the button, False to disable it.
+        """
         self.ui.export_pushButton.setEnabled(enabled)
 
     def set_progress_bar_value(self, value: int) -> None:

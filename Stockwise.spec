@@ -6,7 +6,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-    ('version 2.1.0.txt', '.'),
+    ('version 2.2.0.txt', '.'),
     ('config.yaml', '.'),
     ('updater.exe', '.'),
     ('templates', 'templates'),
@@ -59,7 +59,7 @@ internal_dir = os.path.join(dist_dir, '_internal')
 
 files_to_copy = [
     'config.yaml',
-    'version 2.1.0.txt',
+    'version 2.2.0.txt',
     'updater.exe',
     'templates'
 ]

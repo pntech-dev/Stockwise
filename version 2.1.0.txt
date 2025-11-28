@@ -1,2 +1,0 @@
-- Added a search for the materials of the current specification.
-- Added export of the current specification to Excel.
