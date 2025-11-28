@@ -1,13 +1,15 @@
 import os
-import yaml
 import subprocess
-import pandas as pd
-
 from pathlib import Path
-from openpyxl import load_workbook
-from PyQt5.QtCore import QObject, pyqtSignal
-from openpyxl.styles import Alignment, Border, Font, Side
+from typing import Dict, List, Optional
 
+import pandas as pd
+import yaml
+from openpyxl import load_workbook
+from openpyxl.styles import Alignment, Border, Font, Side
+from PyQt5.QtCore import QObject, pyqtSignal
+
+# Column keys in the source Excel files
 NOM_KEY = "Номенклатура"
 QTY_KEY = "Количество"
 UNIT_KEY = "Ед. изм."
@@ -15,247 +17,231 @@ RMP_KEY = "РМП"
 
 
 class MainModel(QObject):
-    """Manages the application's data and business logic."""
+    """Manages application data and core business logic."""
 
     show_notification = pyqtSignal(str, str)
 
     def __init__(self) -> None:
-        """Initializes the MainModel."""
+        """Initializes the model and loads configuration/state."""
         super().__init__()
-
-        # Program configuration
         self.program_version_number: str = ""
         self.program_server_path: str = ""
         self.path_to_products_folder: str = ""
         self.is_products_folder_available: bool = False
         self._load_config()
 
-        # Product data
-        self.products_names: list[list[str]] = []
+        self.products_names: List[List[str]] = []
         self.update_products_names()
 
-        # Current state
         self.current_product: str = ""
         self.current_product_path: str = ""
-        self.current_product_materials: list[dict] = []
-        self.material_selection: dict[str, bool] = {}
+        self.current_product_materials: List[Dict] = []
+        self.material_selection: Dict[str, bool] = {}
         self.norms_calculations_value: int = 1
         self.search_in_materials: bool = False
-        self.search_in_materials_data: list[dict] = []
+        self.search_in_materials_data: List[Dict] = []
 
-    def get_semi_finished_products(self, product_name: tuple) -> list[str]:
-        """Gets a list of semi-finished product files for a given product."""
+    def get_semi_finished_products(self, product_name: tuple) -> List[str]:
+        """Collects Excel files for the selected product.
 
-        def add_file(file_path: str, file_list: list[str]) -> None:
-            """Adds a file to the list if it is a valid Excel file."""
-            if os.path.isfile(file_path) and file_path.lower().endswith(
-                (".xlsx", ".xls")
-            ):
+        Args:
+            product_name: Tuple of path segments that identify the product.
+
+        Returns:
+            List of Excel file paths, including files inside the RMP subfolder.
+        """
+
+        def add_file(file_path: str, file_list: List[str]) -> None:
+            if os.path.isfile(file_path) and file_path.lower().endswith((".xlsx", ".xls")):
                 file_list.append(file_path)
 
-        semi_finished_products = []
+        semi_finished_products: List[str] = []
         try:
             product_path = os.path.join(self.path_to_products_folder, *product_name)
-
             if os.path.exists(product_path) and os.path.isdir(product_path):
                 self.current_product_path = product_path
                 for item_name in os.listdir(product_path):
                     item_path = os.path.join(product_path, item_name)
-                    # Handle the 'RMP' (raw material product) special folder
-                    if item_name.lower() == "��??��??��?��?" and os.path.isdir(item_path):
+                    if item_name.lower() == "рмп" and os.path.isdir(item_path):
                         for rmp_file_name in os.listdir(item_path):
-                            rmp_file_path = os.path.join(item_path, rmp_file_name)
-                            add_file(rmp_file_path, semi_finished_products)
+                            add_file(os.path.join(item_path, rmp_file_name), semi_finished_products)
                     else:
                         add_file(item_path, semi_finished_products)
             return semi_finished_products
         except Exception as e:
-            self.show_notification.emit(
-                "error", f"Failed to collect semi-finished products: {e}"
-            )
+            self.show_notification.emit("error", f"Failed to collect semi-finished products: {e}")
             return []
 
-    def get_product_materials(
-        self, semi_finished_products: list[str]
-    ) -> list[dict]:
-        """Aggregates all materials from a list of semi-finished product files."""
-        product_materials_dict = {}
+    def get_product_materials(self, semi_finished_products: List[str]) -> List[Dict]:
+        """Aggregates materials from semi-finished product workbooks.
+
+        Args:
+            semi_finished_products: Paths to Excel files that describe semi-finished items.
+
+        Returns:
+            Deduplicated materials list with merged quantities and RMP markers.
+        """
+        product_materials_dict: Dict[str, Dict] = {}
         semi_product_names = [
-            os.path.splitext(os.path.basename(p))[0].lower().strip()
-            for p in semi_finished_products
+            os.path.splitext(os.path.basename(p))[0].lower().strip() for p in semi_finished_products
         ]
 
         for file_path in semi_finished_products:
             if not os.path.exists(file_path):
-                self.show_notification.emit(
-                    "error", f"File not found: {file_path}"
-                )
+                self.show_notification.emit("error", f"File not found: {file_path}")
                 continue
 
             try:
-                is_rmp = (
-                    os.path.basename(os.path.dirname(file_path)).lower() == "��??��??��?��?"
-                )
+                is_rmp = os.path.basename(os.path.dirname(file_path)).lower() == "рмп"
                 df = pd.read_excel(file_path, sheet_name="TDSheet")
                 df = self._normalize_material_columns(df)
-                df = df.dropna(subset=[NOM_KEY])
-                df = df.fillna("")
+                df = df.dropna(subset=[NOM_KEY]).fillna("")
 
                 for item in df.to_dict("records"):
                     nomenclature = item[NOM_KEY]
-                    # Skip materials that are themselves semi-finished products
                     if nomenclature.lower().strip() in semi_product_names:
                         continue
 
-                    # Calculate quantity based on norm
                     quantity = item[QTY_KEY] / 1000
                     if self.norms_calculations_value != 1:
                         quantity *= self.norms_calculations_value
                     item[QTY_KEY] = quantity
                     item[RMP_KEY] = is_rmp
 
-                    # Aggregate materials
                     if nomenclature in product_materials_dict:
                         product_materials_dict[nomenclature][QTY_KEY] += quantity
                     else:
                         product_materials_dict[nomenclature] = item
 
             except Exception as e:
-                self.show_notification.emit(
-                    "error", f"Failed to read file {os.path.basename(file_path)}: {e}"
-                )
+                self.show_notification.emit("error", f"Failed to read file {os.path.basename(file_path)}: {e}")
 
         return list(product_materials_dict.values())
 
-    def sync_material_selection(
-        self, materials: list[dict], reset: bool = False
-    ) -> None:
-        """Keeps the materials selection map in sync with the current dataset."""
-        new_selection = {}
+    def sync_material_selection(self, materials: List[Dict], reset: bool = False) -> None:
+        """Syncs selection map with current materials list.
+
+        Args:
+            materials: Materials currently displayed.
+            reset: If True, default all to selected.
+        """
+        new_selection: Dict[str, bool] = {}
         for item in materials:
             name = item[NOM_KEY]
-            if reset or name not in self.material_selection:
-                new_selection[name] = True
-            else:
-                new_selection[name] = self.material_selection[name]
+            new_selection[name] = True if reset or name not in self.material_selection else self.material_selection[name]
         self.material_selection = new_selection
 
     def set_material_selected(self, name: str, is_selected: bool) -> None:
-        """Updates selection state for a single material."""
+        """Sets selection state for a single material.
+
+        Args:
+            name: Material name used as the selection key.
+            is_selected: Desired selection state.
+        """
         if name in self.material_selection:
             self.material_selection[name] = is_selected
 
     def set_all_materials_selected(self, is_selected: bool) -> None:
-        """Sets selection state for all materials."""
+        """Sets selection state for all materials.
+
+        Args:
+            is_selected: Desired selection state applied to every material.
+        """
         for key in list(self.material_selection.keys()):
             self.material_selection[key] = is_selected
 
-    def get_desktop_path(self) -> Path | None:
-        """Finds the path to the user's desktop folder."""
+    def get_desktop_path(self) -> Optional[Path]:
+        """Resolves a Desktop path, handling OneDrive RU/EN variants.
+
+        Returns:
+            Desktop path if it can be resolved, otherwise ``None``.
+        """
         try:
-            # Check for Russian OneDrive path
-            onedrive_ru = Path.home() / "OneDrive" / "�����+��?�?�� ��?�?'��?�?>"
+            home = Path.home()
+            onedrive_ru = home / "OneDrive" / "Рабочий стол"
             if onedrive_ru.exists():
                 return onedrive_ru
-
-            # Check for English OneDrive path
-            onedrive_en = Path.home() / "OneDrive" / "Desktop"
+            onedrive_en = home / "OneDrive" / "Desktop"
             if onedrive_en.exists():
                 return onedrive_en
-
-            # Fallback to standard Desktop path
-            return Path.home() / "Desktop"
+            return home / "Desktop"
         except Exception as e:
             self.show_notification.emit("error", f"Failed to resolve Desktop path: {e}")
             return None
 
-    def check_program_version(self) -> bool | None:
-        """Checks if the local program version is up-to-date with the server."""
+    def check_program_version(self) -> Optional[bool]:
+        """Compares the local version with the server configuration.
+
+        Returns:
+            True if up-to-date, False if update needed, None on error/no path.
+        """
         if not self.program_server_path or not os.path.exists(self.program_server_path):
             return None
 
         for file_name in os.listdir(self.program_server_path):
             if file_name.startswith("config") and file_name.endswith(".yaml"):
                 try:
-                    with open(
-                        os.path.join(self.program_server_path, file_name),
-                        "r",
-                        encoding="utf-8",
-                    ) as f:
+                    with open(os.path.join(self.program_server_path, file_name), "r", encoding="utf-8") as f:
                         config_data = yaml.safe_load(f)
                     server_version = config_data.get("program_version_number")
                     if server_version is None:
                         return None
                     return server_version <= self.program_version_number
                 except (IOError, yaml.YAMLError, KeyError):
-                    # Ignore corrupted config files or files that don't match schema
                     continue
-        return False  # Return False if no valid config found on server
+        return False
 
     def update_products_names(self) -> None:
-        """Recursively finds all products in the products folder."""
+        """Refreshes the products list by scanning the configured folder."""
         if not self.is_products_folder_available:
             self.products_names = []
-            self.show_notification.emit(
-                "error",
-                "Products folder is not available.",
-            )
+            self.show_notification.emit("error", "Products folder is not available.")
             return
 
-        products = []
+        products: List[List[str]] = []
         try:
             for root, dirs, _ in os.walk(self.path_to_products_folder):
-                # Exclude the 'rmp' directory from the walk
-                if "��??��??��?��?" in [d.lower() for d in dirs]:
-                    dirs.remove("��??��??��?��?" if "��??��??��?��?" in dirs else "��??��?")
-
-                # A directory is considered a product if it has no subdirectories
+                lower_dirs = [d.lower() for d in dirs]
+                if "рмп" in lower_dirs:
+                    dirs.remove(dirs[lower_dirs.index("рмп")])
                 if not dirs:
                     relative_path = os.path.relpath(root, self.path_to_products_folder)
                     if relative_path != ".":
                         products.append(relative_path.split(os.sep))
             self.products_names = products
         except Exception as e:
-            self.show_notification.emit(
-                "error", f"Failed to scan products: {e}"
-            )
+            self.show_notification.emit("error", f"Failed to scan products: {e}")
 
     def update_program(self) -> None:
-        """Launches the updater executable with administrator privileges."""
+        """Launches the updater executable with admin rights."""
         updater_path = os.path.join(os.getcwd(), "updater.exe")
         if not os.path.exists(updater_path):
-            self.show_notification.emit(
-                "error", f"Updater executable not found: {updater_path}"
-            )
+            self.show_notification.emit("error", f"updater.exe not found: {updater_path}")
             return
-
         try:
-            # Use PowerShell to run the updater with admin rights
             command = f'Start-Process "{updater_path}" -ArgumentList "{self.program_server_path}" -Verb RunAs'
             subprocess.run(["powershell", "-Command", command], check=True, shell=True)
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
-            self.show_notification.emit(
-                "error", f"Failed to launch updater: {e}"
-            )
+            self.show_notification.emit("error", f"Failed to launch updater: {e}")
 
     def export_data(self) -> None:
-        """Exports the current materials list to a styled Excel file."""
+        """Exports selected materials to Excel using the table template.
+
+        The method applies selection state, writes rows into the template, and
+        saves the result to the user's Desktop.
+        """
         try:
             workbook = load_workbook("templates/table.xlsx")
             sheet = workbook.active
             sheet.title = self._sanitize_sheet_title("Материалы")
 
             selected_data = [
-                item
-                for item in self.current_product_materials
-                if self.material_selection.get(item[NOM_KEY], True)
+                item for item in self.current_product_materials if self.material_selection.get(item[NOM_KEY], True)
             ]
-
             if not selected_data:
                 self.show_notification.emit("warning", "Нет данных для экспорта.")
                 return
 
-            # --- Fill data ---
             start_row = 2
             for i, item in enumerate(selected_data):
                 row_idx = start_row + i
@@ -263,69 +249,66 @@ class MainModel(QObject):
                 sheet.cell(row=row_idx, column=2, value=item[UNIT_KEY])
                 sheet.cell(row=row_idx, column=3, value=item[QTY_KEY])
 
-            # --- Apply styles ---
             font = Font(name="Times New Roman", size=14)
             thin_border = Border(
-                left=Side(style="thin"),
-                right=Side(style="thin"),
-                top=Side(style="thin"),
-                bottom=Side(style="thin"),
+                left=Side(style="thin"), right=Side(style="thin"), top=Side(style="thin"), bottom=Side(style="thin")
             )
 
-            for row in sheet.iter_rows(
-                min_row=start_row, max_row=sheet.max_row, max_col=3
-            ):
+            for row in sheet.iter_rows(min_row=start_row, max_row=sheet.max_row, max_col=3):
                 for cell in row:
                     cell.font = font
                     cell.border = thin_border
                     cell.alignment = Alignment(wrap_text=True, vertical="top")
+                sheet.cell(row=cell.row, column=1).alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
+                sheet.cell(row=cell.row, column=2).alignment = Alignment(horizontal="center", vertical="top", wrap_text=True)
+                sheet.cell(row=cell.row, column=3).alignment = Alignment(horizontal="center", vertical="top", wrap_text=True)
 
-                # Column-specific alignments
-                sheet.cell(row=cell.row, column=1).alignment = Alignment(
-                    horizontal="left", vertical="top", wrap_text=True
-                )
-                sheet.cell(row=cell.row, column=2).alignment = Alignment(
-                    horizontal="center", vertical="top", wrap_text=True
-                )
-                sheet.cell(row=cell.row, column=3).alignment = Alignment(
-                    horizontal="center", vertical="top", wrap_text=True
-                )
-
-            # --- Page setup ---
             sheet.page_setup.fitToWidth = 1
             sheet.page_setup.fitToHeight = 0
 
-            # --- Save file ---
             desktop_path = self.get_desktop_path()
             if not desktop_path:
-                self.show_notification.emit(
-                    "error", "Не удалось определить путь сохранения."
-                )
+                self.show_notification.emit("error", "Не удалось определить путь сохранения.")
                 return
 
-            file_name = f"Материалы изделия {self.current_product}.xlsx"
-            file_path = desktop_path / file_name
-            workbook.save(file_path)
-
-            self.show_notification.emit(
-                "info", f"Экспорт выполнен: {file_name}"
-            )
+            safe_product = self._sanitize_filename(self.current_product or "product")
+            file_name = f"Материалы изделия {safe_product}.xlsx"
+            workbook.save(desktop_path / file_name)
+            self.show_notification.emit("info", f"Экспорт выполнен: {file_name}")
 
         except Exception as e:
-            self.show_notification.emit(
-                "error", f"Не удалось выполнить экспорт: {e}"
-            )
+            self.show_notification.emit("error", f"Не удалось выполнить экспорт: {e}")
         finally:
-            self.show_notification.emit("", "")  # Resets status bar and enables window
+            self.show_notification.emit("", "")
 
     def _sanitize_sheet_title(self, title: str) -> str:
-        """Removes invalid characters from Excel sheet titles."""
+        """Removes invalid characters from an Excel sheet title.
+
+        Args:
+            title: Proposed worksheet name.
+
+        Returns:
+            Safe worksheet title compatible with Excel.
+        """
         invalid_chars = set(r'[]:*?/\\')
         sanitized = "".join(ch for ch in title if ch not in invalid_chars)
         return sanitized or "Sheet1"
 
+    def _sanitize_filename(self, name: str) -> str:
+        """Removes invalid characters from filename components.
+
+        Args:
+            name: Raw filename fragment.
+
+        Returns:
+            Safe filename fragment; defaults to ``"file"`` when empty.
+        """
+        invalid_chars = set('\\/:*?"<>|')
+        cleaned = "".join(ch for ch in name if ch not in invalid_chars).strip()
+        return cleaned or "file"
+
     def _load_config(self) -> None:
-        """Loads configuration from the config.yaml file."""
+        """Loads configuration from config.yaml and sets product paths."""
         try:
             with open("config.yaml", "r", encoding="utf-8") as file:
                 config = yaml.safe_load(file)
@@ -334,13 +317,9 @@ class MainModel(QObject):
             return
 
         if not isinstance(config, dict) or "path_to_products_folder" not in config:
-            self.show_notification.emit(
-                "error",
-                "Файл config.yaml не содержит обязательных полей.",
-            )
+            self.show_notification.emit("error", "Файл config.yaml не содержит обязательных полей.")
             return
 
-        # Store configuration data
         self.program_version_number = config.get("program_version_number", "")
         self.program_server_path = config.get("server_program_path", "")
 
@@ -349,22 +328,30 @@ class MainModel(QObject):
             self.path_to_products_folder = path
             self.is_products_folder_available = True
         else:
-            self.show_notification.emit(
-                "error",
-                "Путь к папке с продуктами недоступен.",
-            )
+            self.show_notification.emit("error", "Путь к папке с продуктами недоступен.")
             self.is_products_folder_available = False
+
     def _normalize_material_columns(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Renames material columns to standard keys based on fuzzy matching."""
+        """Renames material columns to standard keys using substring matching.
+
+        Args:
+            df: Raw DataFrame read from a materials workbook.
+
+        Returns:
+            DataFrame with normalized column names.
+
+        Raises:
+            ValueError: If required columns cannot be located.
+        """
         columns_lower = {col: str(col).lower() for col in df.columns}
 
-        def find_column(substrings: list[str]) -> str | None:
+        def find_column(substrings: List[str]) -> Optional[str]:
             for col, low in columns_lower.items():
                 if all(sub in low for sub in substrings):
                     return col
             return None
 
-        mapping = {}
+        mapping: Dict[str, str] = {}
         candidates = {
             NOM_KEY: ["номенк"],
             QTY_KEY: ["кол"],
@@ -381,37 +368,5 @@ class MainModel(QObject):
         missing = [key for key in (NOM_KEY, QTY_KEY, UNIT_KEY) if key not in df.columns]
         if missing:
             raise ValueError(f"Usecols do not match columns, missing: {missing}, got: {list(df.columns)}")
-
-        return df
-
-    def _normalize_material_columns(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Renames material columns to standard keys based on fuzzy matching (clean override)."""
-        columns_lower = {col: str(col).lower() for col in df.columns}
-
-        def find_column(substrings: list[str]) -> str | None:
-            for col, low in columns_lower.items():
-                if all(sub in low for sub in substrings):
-                    return col
-            return None
-
-        mapping = {}
-        candidates = {
-            NOM_KEY: ["номенк"],
-            QTY_KEY: ["кол"],
-            UNIT_KEY: ["ед", "изм"],
-        }
-
-        for target, substrings in candidates.items():
-            col = find_column(substrings)
-            if col:
-                mapping[col] = target
-
-        df = df.rename(columns=mapping)
-
-        missing = [key for key in (NOM_KEY, QTY_KEY, UNIT_KEY) if key not in df.columns]
-        if missing:
-            raise ValueError(
-                f"Usecols do not match columns, missing: {missing}, got: {list(df.columns)}"
-            )
 
         return df

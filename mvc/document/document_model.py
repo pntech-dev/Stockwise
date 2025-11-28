@@ -2,27 +2,23 @@ import os
 import threading
 from copy import copy
 from pathlib import Path
+from typing import Dict, List, Optional
 
 import yaml
 from jinja2 import Template
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Border, Font, Side
 from openpyxl.workbook import Workbook
-from openpyxl.worksheet.worksheet import Worksheet
 from PyQt5.QtCore import QDate, QObject, pyqtSignal
+
+NOM_KEY = "Номенклатура"
+QTY_KEY = "Количество"
+UNIT_KEY = "Ед. изм."
+RMP_KEY = "РМП"
 
 
 class DocumentModel(QObject):
-    """Manages data and business logic for the document generation window.
-
-    This class loads necessary configuration, filters materials based on
-    document type, and handles the creation of styled Excel documents in a
-    separate thread to keep the UI responsive.
-
-    Attributes:
-        show_notification: Signal emitting messages for the user.
-        progress_changed: Signal to update the progress bar during export.
-    """
+    """Handles document generation logic for product materials."""
 
     show_notification = pyqtSignal(str, str)
     progress_changed = pyqtSignal(str, int)
@@ -31,37 +27,34 @@ class DocumentModel(QObject):
         self,
         product_name: str,
         norms_calculations_value: int,
-        materials: list[dict],
+        materials: List[Dict],
         current_product_path: str,
     ) -> None:
-        """Initializes the DocumentModel.
+        """Initializes document data and settings.
 
         Args:
-            product_name: The name of the product.
-            norms_calculations_value: The quantity for which norms are calculated.
-            materials: The full list of materials for the product.
-            current_product_path: The filesystem path to the product's folder.
+            product_name: Name of the product the documents describe.
+            norms_calculations_value: Quantity multiplier applied to exported data.
+            materials: Full materials list for the current product.
+            current_product_path: Filesystem path to the current product folder.
         """
         super().__init__()
 
-        # Data from the main application window
         self.product_name: str = product_name
-        self.materials: list[dict] = materials
+        self.materials: List[Dict] = materials
         self.current_product_path: str = current_product_path
 
-        # Data from configuration file
-        self.signature_from_human: list[str] = []
-        self.signature_from_position: list[str] = []
-        self.signature_whom_human: list[str] = []
-        self.signature_whom_position: list[str] = []
-        self.document_blacklist: list[str] = []
-        self.document_whitelist: list[str] = []
-        self.bid_blacklist: list[str] = []
-        self.bid_whitelist: list[str] = []
+        self.signature_from_human: List[str] = []
+        self.signature_from_position: List[str] = []
+        self.signature_whom_human: List[str] = []
+        self.signature_whom_position: List[str] = []
+        self.document_blacklist: List[str] = []
+        self.document_whitelist: List[str] = []
+        self.bid_blacklist: List[str] = []
+        self.bid_whitelist: List[str] = []
         self.templates_folder_path: str = ""
         self._load_config()
 
-        # Data for document templates
         self.outgoing_number: str = ""
         self.current_date: str = ""
         self.quantity: int = norms_calculations_value
@@ -70,82 +63,67 @@ class DocumentModel(QObject):
         self.from_position: str = ""
         self.from_fio: str = ""
 
-        # Progress bar settings
         self.progress_bar_export_excel_step_size: int = 7
 
     def get_current_date(self) -> QDate:
         """Returns the current date."""
         return QDate.currentDate()
 
-    def get_desktop_path(self) -> Path | None:
-        """Finds the path to the user's desktop folder.
-
-        Checks for common OneDrive and standard desktop paths.
+    def get_desktop_path(self) -> Optional[Path]:
+        """Resolves a Desktop path, handling OneDrive RU/EN variants.
 
         Returns:
-            A Path object to the desktop, or None if an error occurs.
+            Desktop path if it can be resolved, otherwise ``None``.
         """
         try:
             home = Path.home()
-            # Check for Russian OneDrive path
             onedrive_ru = home / "OneDrive" / "Рабочий стол"
             if onedrive_ru.exists():
                 return onedrive_ru
-            # Check for English OneDrive path
             onedrive_en = home / "OneDrive" / "Desktop"
             if onedrive_en.exists():
                 return onedrive_en
-            # Fallback to standard Desktop path
             return home / "Desktop"
         except Exception as e:
-            self.show_notification.emit("error", f"Ошибка при получении пути к рабочему столу: {e}")
+            self.show_notification.emit("error", f"Не удалось определить путь рабочего стола: {e}")
             return None
 
-    def export_in_thread(
-        self,
-        document_type: str,
-        save_folder_path: str,
-    ) -> threading.Thread | None:
-        """Starts the document export process in a separate thread.
+    def export_in_thread(self, document_type: str, save_folder_path: str) -> Optional[threading.Thread]:
+        """Starts export in a background thread to keep the UI responsive.
 
         Args:
-            document_type: The type of document to export ('document' or 'bid').
-            save_folder_path: The folder where the document will be saved.
+            document_type: Document variant to render (for example ``"document"`` or ``"bid"``).
+            save_folder_path: Directory to place the output file; Desktop is used if empty.
 
         Returns:
-            The thread object that was started, or None on error.
+            Thread object if started successfully, otherwise ``None``.
         """
         path = save_folder_path
         if not path:
             desktop = self.get_desktop_path()
             if not desktop:
-                self.show_notification.emit("error", "Не удалось найти путь к рабочему столу.")
+                self.show_notification.emit("error", "Не удалось определить путь сохранения.")
                 return None
             path = str(desktop)
 
         try:
-            thread = threading.Thread(
-                target=self._export_to_excel, args=(document_type, path)
-            )
+            thread = threading.Thread(target=self._export_to_excel, args=(document_type, path))
             thread.daemon = True
             thread.start()
             return thread
         except Exception as e:
-            self.show_notification.emit(
-                "error", f"Не удалось запустить поток для экспорта: {e}"
-            )
+            self.show_notification.emit("error", f"Не удалось запустить экспорт: {e}")
             return None
 
     def _load_config(self) -> None:
-        """Loads configuration from the config.yaml file."""
+        """Loads template paths and signature settings from config.yaml."""
         try:
             with open("config.yaml", "r", encoding="utf-8") as file:
-                config = yaml.safe_load(file) or {{}}
+                config = yaml.safe_load(file) or {}
         except FileNotFoundError:
             self.show_notification.emit("error", "Файл config.yaml не найден.")
             return
-        
-        # Load templates folder path with fallback to local ./templates
+
         configured_templates = config.get("templates_folder_path")
         if configured_templates and os.path.isdir(configured_templates):
             self.templates_folder_path = configured_templates
@@ -157,121 +135,83 @@ class DocumentModel(QObject):
                 self.templates_folder_path = ""
                 self.show_notification.emit(
                     "error",
-                    "Путь к папке templates не найден. Укажите templates_folder_path в config.yaml.",
+                    "Путь к шаблонам не найден. Укажите templates_folder_path в config.yaml.",
                 )
 
-        # Load signatures
         self.signature_from_human = config.get("signature_from_human", [])
         self.signature_from_position = config.get("signature_from_position", [])
         self.signature_whom_human = config.get("signature_whom_human", [])
         self.signature_whom_position = config.get("signature_whom_position", [])
-
-        # Load whitelists and blacklists
         self.bid_blacklist = config.get("bid_blacklist", [])
         self.document_blacklist = config.get("document_blacklist", [])
         self.bid_whitelist = config.get("bid_whitelist", [])
         self.document_whitelist = config.get("document_whitelist", [])
 
-    def _get_document_materials_list(self) -> list[dict]:
-        """Filters and returns the material list for a formal note ('document').
-
-        Filtering logic:
-        1.  Always include materials in the document_whitelist.
-        2.  For other materials, include them if their unit is NOT 'pcs' and
-            they are not from an RMP folder, unless they are in the
-            document_blacklist.
+    def _get_document_materials_list(self) -> List[Dict]:
+        """Builds a filtered materials list for documents using whitelist/blacklist.
 
         Returns:
-            A list of filtered materials.
+            Materials allowed for the main document.
         """
-        filtered_materials = []
+        filtered: List[Dict] = []
         try:
             for item in self.materials:
-                nomenclature_lower = item["Номенклатура"].lower()
+                nomenclature_lower = item[NOM_KEY].lower()
 
-                # 1. Whitelist check
-                if any(
-                    word.lower() in nomenclature_lower
-                    for word in self.document_whitelist
-                    if word
-                ):
-                    filtered_materials.append(item)
+                if any(word.lower() in nomenclature_lower for word in self.document_whitelist if word):
+                    filtered.append(item)
                     continue
 
-                # 2. Main filter for non-whitelisted items
-                if item["Ед. изм."] != "шт" and not item["РМП"]:
-                    is_in_blacklist = any(
-                        word.lower() in nomenclature_lower
-                        for word in self.document_blacklist
-                        if word
-                    )
+                if item[UNIT_KEY] != "шт" and not item[RMP_KEY]:
+                    is_in_blacklist = any(word.lower() in nomenclature_lower for word in self.document_blacklist if word)
                     if not is_in_blacklist:
-                        filtered_materials.append(item)
-            return filtered_materials
+                        filtered.append(item)
+            return filtered
         except Exception as e:
-            self.show_notification.emit(
-                "error", f"Произошла ошибка при фильтрации материалов:\n{e}"
-            )
+            self.show_notification.emit("error", f"Не удалось получить список материалов: {e}")
             return []
 
-    def _get_bid_materials_list(self) -> list[dict]:
-        """Filters and returns the material list for a request ('bid').
-
-        Filtering logic:
-        1.  Always include materials in the bid_whitelist.
-        2.  For other materials, include them if their unit IS 'pcs', unless
-            they are in the bid_blacklist.
+    def _get_bid_materials_list(self) -> List[Dict]:
+        """Builds a filtered materials list for bids using whitelist/blacklist.
 
         Returns:
-            A list of filtered materials.
+            Materials allowed for the bid document.
         """
-        filtered_materials = []
+        filtered: List[Dict] = []
         try:
             for item in self.materials:
-                nomenclature_lower = item["Номенклатура"].lower()
+                nomenclature_lower = item[NOM_KEY].lower()
 
-                # 1. Whitelist check
-                if any(
-                    word.lower() in nomenclature_lower
-                    for word in self.bid_whitelist
-                    if word
-                ):
-                    filtered_materials.append(item)
+                if any(word.lower() in nomenclature_lower for word in self.bid_whitelist if word):
+                    filtered.append(item)
                     continue
 
-                # 2. Main filter for non-whitelisted items
-                if item["Ед. изм."] == "шт":
-                    is_in_blacklist = any(
-                        word.lower() in nomenclature_lower
-                        for word in self.bid_blacklist
-                        if word
-                    )
+                if item[UNIT_KEY] == "шт":
+                    is_in_blacklist = any(word.lower() in nomenclature_lower for word in self.bid_blacklist if word)
                     if not is_in_blacklist:
-                        filtered_materials.append(item)
-            return filtered_materials
+                        filtered.append(item)
+            return filtered
         except Exception as e:
-            self.show_notification.emit(
-                "error", f"Произошла ошибка при фильтрации материалов:\n{e}"
-            )
+            self.show_notification.emit("error", f"Не удалось получить список материалов для заявки: {e}")
             return []
 
     def _export_materials_list(
         self,
         workbook: Workbook,
-        materials_list: list[dict],
+        materials_list: List[Dict],
         progress_bar_value: int,
         progress_bar_process_text: str,
     ) -> int:
-        """Creates and styles a 'Material List' sheet in the given workbook.
+        """Copies the table template sheet and fills it with material rows.
 
         Args:
-            workbook: The openpyxl Workbook to add the sheet to.
-            materials_list: The list of materials to populate the sheet with.
-            progress_bar_value: The current value of the progress bar.
-            progress_bar_process_text: The text for the progress bar.
+            workbook: Workbook that will receive the populated sheet.
+            materials_list: Materials to insert into the table.
+            progress_bar_value: Current progress bar value to update incrementally.
+            progress_bar_process_text: Text displayed alongside the progress bar.
 
         Returns:
-            The updated progress bar value.
+            Updated progress bar value after processing.
         """
         if not self.templates_folder_path:
             self.show_notification.emit(
@@ -283,26 +223,21 @@ class DocumentModel(QObject):
         try:
             table_template_path = os.path.join(self.templates_folder_path, "table.xlsx")
             if not os.path.exists(table_template_path):
-                self.show_notification.emit(
-                    "error",
-                    f"Файл шаблона не найден: {table_template_path}",
-                )
+                self.show_notification.emit("error", f"Файл шаблона не найден: {table_template_path}")
                 return progress_bar_value
+
             template_wb = load_workbook(table_template_path)
             template_sheet = template_wb.active
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            new_sheet = workbook.create_sheet(title="Список материалов")
+            new_sheet = workbook.create_sheet(title="Материалы")
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            # Safely copy values and styles from the template sheet
             for row in template_sheet.iter_rows():
                 for cell in row:
-                    new_cell = new_sheet.cell(
-                        row=cell.row, column=cell.column, value=cell.value
-                    )
+                    new_cell = new_sheet.cell(row=cell.row, column=cell.column, value=cell.value)
                     if cell.has_style:
                         new_cell.font = copy(cell.font)
                         new_cell.border = copy(cell.border)
@@ -314,7 +249,6 @@ class DocumentModel(QObject):
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            # Copy column dimensions and row heights
             for col_letter, col_dim in template_sheet.column_dimensions.items():
                 new_sheet.column_dimensions[col_letter].width = col_dim.width
             progress_bar_value += self.progress_bar_export_excel_step_size
@@ -325,35 +259,24 @@ class DocumentModel(QObject):
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            # Fill in the material data
             start_row = 2
             for i, item in enumerate(materials_list):
                 row = start_row + i
-                new_sheet.cell(row=row, column=1, value=item["Номенклатура"])
-                new_sheet.cell(row=row, column=2, value=item["Ед. изм."])
-                new_sheet.cell(row=row, column=3, value=item["Количество"])
+                new_sheet.cell(row=row, column=1, value=item[NOM_KEY])
+                new_sheet.cell(row=row, column=2, value=item[UNIT_KEY])
+                new_sheet.cell(row=row, column=3, value=item[QTY_KEY])
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            # Apply font and alignment
             font = Font(name="Times New Roman", size=14)
-            for row in new_sheet.iter_rows(
-                min_row=start_row, max_row=new_sheet.max_row, max_col=3
-            ):
+            for row in new_sheet.iter_rows(min_row=start_row, max_row=new_sheet.max_row, max_col=3):
                 for cell in row:
                     cell.font = font
                     if cell.column == 1:
-                        cell.alignment = Alignment(
-                            horizontal="left", vertical="top", wrap_text=True
-                        )
+                        cell.alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
                     else:
-                        cell.alignment = Alignment(
-                            horizontal="center", vertical="top", wrap_text=True
-                        )
-            progress_bar_value += self.progress_bar_export_excel_step_size
-            self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
+                        cell.alignment = Alignment(horizontal="center", vertical="top", wrap_text=True)
 
-            # Apply borders
             thick_side = Side(border_style="thick", color="000000")
             thin_side = Side(border_style="thin", color="000000")
             for row_idx in range(start_row, new_sheet.max_row + 1):
@@ -361,13 +284,10 @@ class DocumentModel(QObject):
                     cell = new_sheet.cell(row=row_idx, column=col_idx)
                     left = thick_side if col_idx == 1 else thin_side
                     right = thick_side if col_idx == 3 else thin_side
-                    cell.border = Border(
-                        left=left, right=right, top=thin_side, bottom=thin_side
-                    )
+                    cell.border = Border(left=left, right=right, top=thin_side, bottom=thin_side)
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_bar_process_text, progress_bar_value)
 
-            # Page setup
             new_sheet.page_setup.fitToWidth = 1
             new_sheet.page_setup.fitToHeight = 0
             progress_bar_value += self.progress_bar_export_excel_step_size
@@ -375,23 +295,23 @@ class DocumentModel(QObject):
 
             return progress_bar_value
         except Exception as e:
-            self.show_notification.emit(
-                "error", f"Ошибка при создании листа с перечнем материалов:\n{e}"
-            )
+            self.show_notification.emit("error", f"Ошибка при формировании листа материалов:\n{e}")
             return progress_bar_value
 
-    def _export_to_excel(
-        self,
-        document_type: str,
-        save_folder_path: str,
-    ) -> None:
-        """Orchestrates the Excel export process for a given document type."""
+    def _export_to_excel(self, document_type: str, save_folder_path: str) -> None:
+        """Renders the selected document type to Excel and writes it to disk.
+
+        Args:
+            document_type: Export mode, either ``"document"`` or ``"bid"``.
+            save_folder_path: Target directory for the generated file.
+        """
         if not self.templates_folder_path:
             self.show_notification.emit(
                 "error",
                 "Путь к шаблонам не задан. Укажите templates_folder_path в config.yaml.",
             )
             return
+
         context = {
             "outgoing_number": self.outgoing_number,
             "current_date": self.current_date,
@@ -407,28 +327,26 @@ class DocumentModel(QObject):
         try:
             if document_type == "document":
                 template_path = os.path.join(self.templates_folder_path, "document.xlsx")
-                save_filename = f"Докладная записка {self.product_name}.xlsx"
+                safe_product = self._sanitize_filename(self.product_name) or ""
+                save_filename = f"Докладная записка {safe_product}.xlsx"
                 sheet_title = "Докладная записка"
                 materials_list = self._get_document_materials_list()
             elif document_type == "bid":
                 template_path = os.path.join(self.templates_folder_path, "bid.xlsx")
-                save_filename = f"Заявка {self.product_name}.xlsx"
+                safe_product = self._sanitize_filename(self.product_name) or ""
+                save_filename = f"Заявка {safe_product}.xlsx"
                 sheet_title = "Заявка"
                 materials_list = self._get_bid_materials_list()
             else:
-                return  # Should not happen
+                return
 
             if not os.path.exists(template_path):
-                self.show_notification.emit(
-                    "error",
-                    f"???? ??????? ?? ??????: {template_path}",
-                )
+                self.show_notification.emit("error", f"Файл шаблона не найден: {template_path}")
                 return
 
             save_path = Path(save_folder_path) / save_filename
             progress_text = f"Экспорт в {save_filename}..."
 
-            # Load main template and render context variables
             wb = load_workbook(template_path)
             ws = wb.active
             ws.title = sheet_title
@@ -443,7 +361,6 @@ class DocumentModel(QObject):
             progress_bar_value += self.progress_bar_export_excel_step_size
             self.progress_changed.emit(progress_text, progress_bar_value)
 
-            # Create and append the materials list sheet
             progress_bar_value = self._export_materials_list(
                 workbook=wb,
                 materials_list=materials_list,
@@ -451,13 +368,23 @@ class DocumentModel(QObject):
                 progress_bar_process_text=progress_text,
             )
 
-            # Save the final workbook
             wb.save(save_path)
-            self.progress_changed.emit("Экспорт завершен", 100)
-            self.show_notification.emit("info", f"Экспорт в {save_filename} успешно завершен")
+            self.progress_changed.emit("Экспорт завершён", 100)
+            self.show_notification.emit("info", f"Экспорт в {save_filename} успешно выполнен")
 
         except Exception as e:
-            self.progress_changed.emit("Экспорт не удался", 100)
-            self.show_notification.emit(
-                "error", f"Произошла ошибка при сохранении документа: {e}"
-            )
+            self.progress_changed.emit("Экспорт не выполнен", 100)
+            self.show_notification.emit("error", f"Не удалось выполнить экспорт документа: {e}")
+
+    def _sanitize_filename(self, name: str) -> str:
+        """Strips invalid characters from a filename-friendly string.
+
+        Args:
+            name: Raw filename component.
+
+        Returns:
+            Safe filename fragment; defaults to ``"file"`` when empty.
+        """
+        invalid_chars = set('\\/:*?"<>|')
+        cleaned = "".join(ch for ch in name if ch not in invalid_chars).strip()
+        return cleaned or "file"

@@ -58,12 +58,17 @@ class MainController:
         self.view.set_header_checkbox_enabled(False)
 
     def show_notification(self, msg_type: str, text: str) -> None:
-        """Shows a notification message."""
+        """Shows a notification message and re-enables the window.
+
+        Args:
+            msg_type: Notification category such as ``"info"`` or ``"error"``.
+            text: Message body to display.
+        """
         Notification().show_notification_message(msg_type=msg_type, text=text)
         self.view.set_window_enabled_state(enabled=True)  # Re-enable the window
 
     def on_search_field_changed(self) -> None:
-        """Handles text changes in the search field to update the table."""
+        """Refreshes table data when the search field text changes."""
         search_text = self.view.get_search_field_text()
         self.view.update_clear_button_state(enabled=bool(search_text))
 
@@ -115,12 +120,12 @@ class MainController:
         self._update_table(data_for_view)
 
     def on_clear_button_clicked(self) -> None:
-        """Handles the click event of the clear search field button."""
+        """Clears the search field and disables the clear button."""
         self.view.clear_search_field()
         self.view.update_clear_button_state(enabled=False)
 
     def on_create_document_button_clicked(self) -> None:
-        """Handles the create document button click."""
+        """Opens the document window for the selected materials."""
         if not self.model.current_product_materials:
             self.show_notification(
                 "error",
@@ -152,33 +157,49 @@ class MainController:
             self.view.update_create_document_button_state(enabled=False)
 
     def on_document_window_destroyed(self) -> None:
-        """Handles the destruction of the document window."""
+        """Resets state when the document window is closed."""
         self.document_window = None
         self.view.update_create_document_button_state(enabled=True)
 
     def on_norms_calculations_changed(self, value: int) -> None:
-        """Handles changes to the norms calculation value."""
+        """Applies a new norms multiplier and refreshes the table.
+
+        Args:
+            value: Multiplier used to scale material quantities.
+        """
         self.model.norms_calculations_value = value
         self.on_search_field_changed()  # Update the data in the table
 
     def on_completer_highlighted(self, text: str) -> None:
-        """Sets a flag when a completer item is highlighted."""
+        """Sets a flag when a completer item is highlighted.
+
+        Args:
+            text: Highlighted completer text (unused).
+        """
         self.is_highlighting = True
 
     def on_text_changed_for_filter(self, text: str) -> None:
-        """Updates the completer filter, ignoring changes from highlighting."""
+        """Updates the completer filter, ignoring changes from highlighting.
+
+        Args:
+            text: Current text in the search field.
+        """
         if self.is_highlighting:
             self.is_highlighting = False
             return
         self.proxy_model.setFilterRegExp(text)
 
     def on_export_button_clicked(self) -> None:
-        """Handles the click event of the export button."""
+        """Exports the current selection to Excel."""
         self.view.set_window_enabled_state(enabled=False)
         self.model.export_data()
 
     def on_search_in_materials_checkbox_state_changed(self, state: bool) -> None:
-        """Handles the state change of the 'search in materials' checkbox."""
+        """Toggles between product search and in-material search modes.
+
+        Args:
+            state: Checkbox state; True enables searching within materials.
+        """
         is_checked = state
         self.model.search_in_materials = is_checked
 
@@ -203,12 +224,21 @@ class MainController:
         self._refresh_table()
 
     def on_row_checkbox_state_changed(self, material_name: str, is_checked: bool) -> None:
-        """Updates selection map when a row checkbox is toggled."""
+        """Updates selection map when a row checkbox is toggled.
+
+        Args:
+            material_name: Name of the material tied to the row.
+            is_checked: Whether the row is now selected.
+        """
         self.model.set_material_selected(material_name, is_checked)
         self._update_buttons_and_header()
 
     def on_header_checkbox_state_changed(self, state: int) -> None:
-        """Selects or deselects all materials when the header checkbox changes."""
+        """Selects or deselects all materials when the header checkbox changes.
+
+        Args:
+            state: Qt check state from the header checkbox.
+        """
         if not self.model.current_product_materials:
             self.view.set_header_checkbox_state(Qt.Unchecked)
             return
@@ -218,7 +248,11 @@ class MainController:
         self._refresh_table()
 
     def _update_table(self, data: list[dict]) -> None:
-        """Refreshes table data, buttons, and header checkbox state."""
+        """Refreshes table data, buttons, and header checkbox state.
+
+        Args:
+            data: Rows to display in the materials table.
+        """
         self.current_table_data = data
         any_selected = any(
             self.model.material_selection.get(item[NOM_KEY], True) for item in data

@@ -3,5 +3,10 @@ Design:
     - The "Export" and "Create document" buttons are swapped
     - Minor changes in UI elements
 
+
+New features:
+    - Added checkboxes for rows in the table. Now you can select specific lines to export.
+
+
 Bugs:
     - Localization has been fixed

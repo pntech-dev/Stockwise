@@ -67,11 +67,19 @@ class MainView:
         return completer
 
     def set_window_enabled_state(self, enabled: bool) -> None:
-        """Sets the enabled state of the main window's central widget."""
+        """Sets the enabled state of the main window's central widget.
+
+        Args:
+            enabled: Whether the central widget should accept input.
+        """
         self.ui.centralwidget.setEnabled(enabled)
 
     def set_search_field_text(self, text: str) -> None:
-        """Sets the text in the search field."""
+        """Sets the text in the search field.
+
+        Args:
+            text: New value for the search input.
+        """
         self.ui.search_line_lineEdit.setText(text)
 
     def set_search_in_materials_checkbox_text(self, text: str) -> None:
@@ -85,7 +93,11 @@ class MainView:
         self.ui.search_in_materials_checkBox.setText(checkbox_text)
 
     def update_clear_button_state(self, enabled: bool) -> None:
-        """Updates the enabled state of the clear button."""
+        """Updates the enabled state of the clear button.
+
+        Args:
+            enabled: Whether the clear button should be clickable.
+        """
         self.ui.search_line_clear_pushButton.setEnabled(enabled)
 
     def update_table_widget_data(
@@ -136,11 +148,19 @@ class MainView:
             self.ui.data_tableWidget.setItem(row_index, 3, unit_item)
 
     def update_create_document_button_state(self, enabled: bool) -> None:
-        """Updates the enabled state of the create document button."""
+        """Updates the enabled state of the create document button.
+
+        Args:
+            enabled: Whether the button should be enabled.
+        """
         self.ui.create_document_pushButton.setEnabled(enabled)
 
     def update_export_button_state(self, enabled: bool) -> None:
-        """Updates the enabled state of the export button."""
+        """Updates the enabled state of the export button.
+
+        Args:
+            enabled: Whether the button should be enabled.
+        """
         self.ui.export_pushButton.setEnabled(enabled)
 
     def clear_search_field(self) -> None:
@@ -204,13 +224,21 @@ class MainView:
         self.header_checkbox.stateChanged.connect(handler)
 
     def set_header_checkbox_state(self, state: int) -> None:
-        """Sets the header checkbox state without emitting signals."""
+        """Sets the header checkbox state without emitting signals.
+
+        Args:
+            state: Qt check state value to apply.
+        """
         self.header_checkbox.blockSignals(True)
         self.header_checkbox.setCheckState(state)
         self.header_checkbox.blockSignals(False)
 
     def set_header_checkbox_enabled(self, enabled: bool) -> None:
-        """Enables or disables the header checkbox."""
+        """Enables or disables the header checkbox.
+
+        Args:
+            enabled: Whether the checkbox should accept user interaction.
+        """
         self.header_checkbox.setEnabled(enabled)
 
     def _setup_header_checkbox(self) -> None:
