@@ -24,6 +24,28 @@ It is intended for engineers, technologists, and planning specialists working wi
 
 ---
 
+## What's New (v2.2.0)
+
+### ✨ New Features
+- **Added checkboxes for table rows**  
+Now you can choose specific items to export.
+- **Introduced search filters**  
+Configure which column of the table to search (by name, quantity, units of measurement)
+
+![Filters Menu](screenshots/filters_menu.png)
+
+### 🖼️ Design
+- Updated the overall appearance of the table.
+- Swapped the positions of the Export and Create document buttons for more intuitive access.
+- Redesigned the search popup for better clarity and usability.
+- Minor improvements to various UI elements.
+
+### 🐞 Bug Fixes
+- Fixed localization issues across the interface.
+- Resolved a bug where the document creation button wouldn’t deactivate during export.
+
+---
+
 ## 📘 Overview
 
 **Stockwise** is a desktop application for engineers, technologists, and production planners.  
@@ -46,7 +68,8 @@ Both document types support:
 
 ### Search
 - Search by product name  
-- Partial match   
+- Partial match  
+- Configurable search filters (name, quantity, units)
 
 #### Content search mode
 The program allows you to search **within the materials of the selected product**, and not just by product names.
@@ -75,6 +98,7 @@ The program allows you to search **within the materials of the selected product*
 - Export of summary materials  
 - Export of generated documents  
 - `.xlsx` format  
+- Selection-based export using row checkboxes
 
 ### Auto-update system
 - Checking the version of the program on the server  

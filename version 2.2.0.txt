@@ -1,13 +1,13 @@
+New features:
+    - Added checkboxes for rows in the table. Now you can select specific lines to export
+    - Added search filters (Filters : by name, quantity, units of measurement)
+
+
 Design:
     - Redesigned the appearance of the table
     - The "Export" and "Create document" buttons are swapped
     - The appearance of the search popup has been changed
     - Minor changes in UI elements
-
-
-New features:
-    - Added checkboxes for rows in the table. Now you can select specific lines to export
-    - Added search filters (Filters : by name, quantity, units of measurement)
 
 
 Bugs:
