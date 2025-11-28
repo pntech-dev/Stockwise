@@ -33,6 +33,9 @@ class Ui_MainWindow(object):
 "    color: #1F2937;\n"
 "}\n"
 "\n"
+"\n"
+"/* PushButton */\n"
+"\n"
 "QPushButton {\n"
 "    background-color: transparent;\n"
 "    border-radius: 6px;\n"
@@ -57,6 +60,9 @@ class Ui_MainWindow(object):
 "    color: #D3DEF5;\n"
 "}\n"
 "\n"
+"\n"
+"/* LineEdit */\n"
+"\n"
 "QLineEdit {\n"
 "    background-color: white;\n"
 "    border-radius: 6px;\n"
@@ -73,6 +79,9 @@ class Ui_MainWindow(object):
 "    border: 1px solid #F5F8FF;\n"
 "    color: #D3DEF5;\n"
 "}\n"
+"\n"
+"\n"
+"/* SpinBox */\n"
 "\n"
 "QSpinBox {\n"
 "    background-color: white;\n"
@@ -99,6 +108,9 @@ class Ui_MainWindow(object):
 "    border: none;\n"
 "    background: transparent;\n"
 "}\n"
+"\n"
+"\n"
+"/* CheckBox */\n"
 "\n"
 "QCheckBox{\n"
 "    color: #0F172A;\n"
@@ -137,6 +149,9 @@ class Ui_MainWindow(object):
 "QCheckBox:disabled {\n"
 "    color: #64748B;\n"
 "}\n"
+"\n"
+"\n"
+"/* TableWidget */\n"
 "\n"
 "QTableView,\n"
 "QTableWidget {\n"
@@ -263,24 +278,46 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addWidget(self.search_line_label)
         self.search_line_lineEdit = QtWidgets.QLineEdit(self.search_line_frame)
         self.search_line_lineEdit.setEnabled(True)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.search_line_lineEdit.sizePolicy().hasHeightForWidth())
+        self.search_line_lineEdit.setSizePolicy(sizePolicy)
         self.search_line_lineEdit.setMinimumSize(QtCore.QSize(0, 0))
         self.search_line_lineEdit.setMaximumSize(QtCore.QSize(16777215, 16777215))
         font = QtGui.QFont()
         font.setFamily("Segoe UI")
         font.setPointSize(12)
         self.search_line_lineEdit.setFont(font)
+        self.search_line_lineEdit.setClearButtonEnabled(True)
         self.search_line_lineEdit.setObjectName("search_line_lineEdit")
         self.horizontalLayout.addWidget(self.search_line_lineEdit)
-        self.search_line_clear_pushButton = QtWidgets.QPushButton(self.search_line_frame)
-        self.search_line_clear_pushButton.setEnabled(False)
-        self.search_line_clear_pushButton.setMinimumSize(QtCore.QSize(100, 0))
-        self.search_line_clear_pushButton.setMaximumSize(QtCore.QSize(100, 16777215))
+        self.search_filters_pushButton = QtWidgets.QPushButton(self.search_line_frame)
+        self.search_filters_pushButton.setEnabled(True)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.search_filters_pushButton.sizePolicy().hasHeightForWidth())
+        self.search_filters_pushButton.setSizePolicy(sizePolicy)
+        self.search_filters_pushButton.setMinimumSize(QtCore.QSize(0, 0))
+        self.search_filters_pushButton.setMaximumSize(QtCore.QSize(16777215, 16777215))
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setKerning(True)
-        self.search_line_clear_pushButton.setFont(font)
-        self.search_line_clear_pushButton.setObjectName("search_line_clear_pushButton")
-        self.horizontalLayout.addWidget(self.search_line_clear_pushButton)
+        self.search_filters_pushButton.setFont(font)
+        self.search_filters_pushButton.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/default.svg"), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/disabled.svg"), QtGui.QIcon.Disabled, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/disabled.svg"), QtGui.QIcon.Disabled, QtGui.QIcon.On)
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/hover.svg"), QtGui.QIcon.Active, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/hover.svg"), QtGui.QIcon.Active, QtGui.QIcon.On)
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/clicked.svg"), QtGui.QIcon.Selected, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(":/icons/filters/clicked.svg"), QtGui.QIcon.Selected, QtGui.QIcon.On)
+        self.search_filters_pushButton.setIcon(icon)
+        self.search_filters_pushButton.setIconSize(QtCore.QSize(18, 20))
+        self.search_filters_pushButton.setObjectName("search_filters_pushButton")
+        self.horizontalLayout.addWidget(self.search_filters_pushButton)
         self.verticalLayout_2.addWidget(self.search_line_frame)
         self.search_in_materials_checkBox = QtWidgets.QCheckBox(self.search_frame)
         font = QtGui.QFont()
@@ -414,9 +451,9 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Stockwise"))
         self.search_line_label.setText(_translate("MainWindow", "Поиск:"))
-        self.search_line_lineEdit.setPlaceholderText(_translate("MainWindow", "БВВ.01"))
-        self.search_line_clear_pushButton.setText(_translate("MainWindow", "Очистить"))
+        self.search_line_lineEdit.setPlaceholderText(_translate("MainWindow", "Поиск по названию..."))
         self.search_in_materials_checkBox.setText(_translate("MainWindow", "Поиск по материалам изделия"))
         self.norms_calculations_lalabel.setText(_translate("MainWindow", "Нормы на количество:"))
         self.export_pushButton.setText(_translate("MainWindow", "Экспортировать"))
         self.create_document_pushButton.setText(_translate("MainWindow", "Создать документ"))
+import resources.resources_rc

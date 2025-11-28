@@ -3,5 +3,10 @@
     <file>icon.ico</file>
     <file>arrow_down.svg</file>
     <file>checkbox_check.svg</file>
+
+    <file>filters/default.svg</file>
+    <file>filters/hover.svg</file>
+    <file>filters/clicked.svg</file>
+    <file>filters/disabled.svg</file>
   </qresource>
 </RCC>

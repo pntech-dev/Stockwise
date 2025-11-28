@@ -34,6 +34,9 @@ QLabel {
     color: #1F2937;
 }
 
+
+/* PushButton */
+
 QPushButton {
     background-color: transparent;
     border-radius: 6px;
@@ -58,6 +61,9 @@ QPushButton:disabled {
     color: #D3DEF5;
 }
 
+
+/* LineEdit */
+
 QLineEdit {
     background-color: white;
     border-radius: 6px;
@@ -74,6 +80,9 @@ QLineEdit:disabled {
     border: 1px solid #F5F8FF;
     color: #D3DEF5;
 }
+
+
+/* SpinBox */
 
 QSpinBox {
     background-color: white;
@@ -100,6 +109,9 @@ QSpinBox::up-button, QSpinBox::down-button {
     border: none;
     background: transparent;
 }
+
+
+/* CheckBox */
 
 QCheckBox{
     color: #0F172A;
@@ -138,6 +150,9 @@ QCheckBox::indicator:disabled {
 QCheckBox:disabled {
     color: #64748B;
 }
+
+
+/* TableWidget */
 
 QTableView,
 QTableWidget {
@@ -319,6 +334,12 @@ QScrollBar::sub-line:horizontal {
             <property name="enabled">
              <bool>true</bool>
             </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="minimumSize">
              <size>
               <width>0</width>
@@ -338,24 +359,33 @@ QScrollBar::sub-line:horizontal {
              </font>
             </property>
             <property name="placeholderText">
-             <string>БВВ.01</string>
+             <string>Поиск по названию...</string>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="search_line_clear_pushButton">
+           <widget class="QPushButton" name="search_filters_pushButton">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
             <property name="minimumSize">
              <size>
-              <width>100</width>
+              <width>0</width>
               <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>100</width>
+              <width>16777215</width>
               <height>16777215</height>
              </size>
             </property>
@@ -366,7 +396,24 @@ QScrollBar::sub-line:horizontal {
              </font>
             </property>
             <property name="text">
-             <string>Очистить</string>
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normalon>:/icons/filters/default.svg</normalon>
+              <disabledoff>:/icons/filters/disabled.svg</disabledoff>
+              <disabledon>:/icons/filters/disabled.svg</disabledon>
+              <activeoff>:/icons/filters/hover.svg</activeoff>
+              <activeon>:/icons/filters/hover.svg</activeon>
+              <selectedoff>:/icons/filters/clicked.svg</selectedoff>
+              <selectedon>:/icons/filters/clicked.svg</selectedon>
+             </iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>18</width>
+              <height>20</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -650,6 +697,8 @@ QPushButton:disabled {
    </layout>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources/resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

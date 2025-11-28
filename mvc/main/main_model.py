@@ -43,6 +43,7 @@ class MainModel(QObject):
 
         self.current_product: str = ""
         self.current_product_path: str = ""
+        self.current_semi_finished_products: List[str] = []
         self.current_product_materials: List[Dict] = []
         self.material_selection: Dict[str, bool] = {}
         self.norms_calculations_value: int = 1
@@ -75,8 +76,10 @@ class MainModel(QObject):
                             add_file(os.path.join(item_path, rmp_file_name), semi_finished_products)
                     else:
                         add_file(item_path, semi_finished_products)
+            self.current_semi_finished_products = semi_finished_products
             return semi_finished_products
         except Exception as e:
+            self.current_semi_finished_products = []
             self.show_notification.emit("error", f"Failed to collect semi-finished products: {e}")
             return []
 
@@ -125,6 +128,18 @@ class MainModel(QObject):
                 self.show_notification.emit("error", f"Failed to read file {os.path.basename(file_path)}: {e}")
 
         return list(product_materials_dict.values())
+
+    def recalculate_current_materials(self) -> List[Dict]:
+        """Recalculates materials for the current product using the stored semi-finished list."""
+        if not self.current_semi_finished_products:
+            self.current_product_materials = []
+            self.sync_material_selection([], reset=True)
+            return []
+
+        product_materials = self.get_product_materials(self.current_semi_finished_products)
+        self.current_product_materials = product_materials
+        self.sync_material_selection(product_materials, reset=False)
+        return product_materials
 
     def sync_material_selection(self, materials: List[Dict], reset: bool = False) -> None:
         """Syncs selection map with current materials list.
@@ -279,7 +294,7 @@ class MainModel(QObject):
                 self.show_notification.emit("error", "Не удалось определить путь сохранения.")
                 return
 
-            safe_product = self._sanitize_filename(self.current_product or "product")
+            safe_product = self._sanitize_filename(self.current_product) or ""
             file_name = f"Материалы изделия {safe_product}.xlsx"
             workbook.save(desktop_path / file_name)
             self.show_notification.emit("info", f"Экспорт выполнен: {file_name}")

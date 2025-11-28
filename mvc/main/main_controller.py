@@ -8,6 +8,8 @@ from utils.proxy_models import CustomFilterProxyModel
 
 
 NOM_KEY = "Номенклатура"
+QTY_KEY = "Количество"
+UNIT_KEY = "Ед. изм."
 
 
 class MainController:
@@ -29,6 +31,11 @@ class MainController:
         self.view = view
         self.is_highlighting: bool = False
         self.current_table_data: list[dict] = []
+        self.search_filters: dict[str, bool] = {
+            "name": True,
+            "quantity": False,
+            "unit": False,
+        }
 
         self.document_window = None  # Reference to the document window
 
@@ -53,7 +60,6 @@ class MainController:
 
         # Connect view signals to controller slots
         self.view.search_field_changed(self.on_search_field_changed)
-        self.view.clear_button_clicked(self.on_clear_button_clicked)
         self.view.create_document_button_clicked(self.on_create_document_button_clicked)
         self.view.norms_calculations_changed(self.on_norms_calculations_changed)
         self.view.export_button_clicked(self.on_export_button_clicked)
@@ -61,6 +67,11 @@ class MainController:
             self.on_search_in_materials_checkbox_state_changed
         )
         self.view.header_checkbox_state_changed(self.on_header_checkbox_state_changed)
+        self.view.setup_search_filters_menu(
+            self.search_filters, self.on_search_filter_toggled
+        )
+        self.view.set_filters_button_enabled(False)
+        self._update_search_placeholder()
 
         # Connect model signals to controller slots
         self.model.show_notification.connect(self.show_notification)
@@ -81,7 +92,6 @@ class MainController:
     def on_search_field_changed(self) -> None:
         """Refreshes table data when the search field text changes."""
         search_text = self.view.get_search_field_text()
-        self.view.update_clear_button_state(enabled=bool(search_text))
 
         data_for_view = []
 
@@ -115,25 +125,27 @@ class MainController:
                 else:
                     self.model.sync_material_selection([], reset=is_new_product)
                     self.model.current_product_materials = []
+                    self.model.current_semi_finished_products = []
             else:
                 self.model.current_product_materials = []
+                self.model.current_semi_finished_products = []
                 self.model.sync_material_selection([], reset=True)
         # Otherwise, filter the materials of the current product
         else:
-            search_words = search_text.strip().lower().split()
-            data_for_view = [
-                item
-                for item in self.model.current_product_materials
-                if all(word in item[NOM_KEY].lower() for word in search_words)
-            ]
-            self.model.search_in_materials_data = data_for_view
+            active_filters = [key for key, value in self.search_filters.items() if value]
+            if not active_filters:
+                data_for_view = self.model.current_product_materials
+                self.model.search_in_materials_data = data_for_view
+            else:
+                search_words = search_text.strip().lower().split()
+                data_for_view = [
+                    item
+                    for item in self.model.current_product_materials
+                    if self._material_matches_search(item, search_words)
+                ]
+                self.model.search_in_materials_data = data_for_view
 
         self._update_table(data_for_view)
-
-    def on_clear_button_clicked(self) -> None:
-        """Clears the search field and disables the clear button."""
-        self.view.clear_search_field()
-        self.view.update_clear_button_state(enabled=False)
 
     def on_create_document_button_clicked(self) -> None:
         """Opens the document window for the selected materials."""
@@ -179,7 +191,26 @@ class MainController:
             value: Multiplier used to scale material quantities.
         """
         self.model.norms_calculations_value = value
-        self.on_search_field_changed()  # Update the data in the table
+        if self.model.current_semi_finished_products:
+            self.model.recalculate_current_materials()
+            if self.model.search_in_materials:
+                search_text = self.view.get_search_field_text()
+                active_filters = [key for key, val in self.search_filters.items() if val]
+                if not active_filters:
+                    data_for_view = self.model.current_product_materials
+                else:
+                    search_words = search_text.strip().lower().split()
+                    data_for_view = [
+                        item
+                        for item in self.model.current_product_materials
+                        if self._material_matches_search(item, search_words)
+                    ]
+                self.model.search_in_materials_data = data_for_view
+            else:
+                data_for_view = self.model.current_product_materials
+            self._update_table(data_for_view)
+        else:
+            self.on_search_field_changed()  # Update the data in the table
 
     def on_completer_highlighted(self, text: str) -> None:
         """Sets a flag when a completer item is highlighted.
@@ -200,6 +231,20 @@ class MainController:
             return
         self.proxy_model.setFilterRegExp(text)
 
+    def on_search_filter_toggled(self, filter_key: str, is_checked: bool) -> None:
+        """Updates search filter flags and refreshes material filtering if needed."""
+        if filter_key not in self.search_filters:
+            return
+
+        self.search_filters[filter_key] = is_checked
+
+        if self.model.search_in_materials:
+            self.on_search_field_changed()
+        else:
+            # Keep UI in sync if toggled while disabled (shouldn't happen, but safe guard)
+            self.view.set_filter_checked(filter_key, False)
+        self._update_search_placeholder()
+
     def on_export_button_clicked(self) -> None:
         """Exports the current selection to Excel."""
         self.view.set_window_enabled_state(enabled=False)
@@ -219,6 +264,8 @@ class MainController:
             self.model.current_product = product_name
             self.view.clear_search_field()
             self.view.set_search_in_materials_checkbox_text(text=product_name)
+            self.view.set_filters_button_enabled(True)
+            self._update_search_placeholder()
 
             material_names = [item[NOM_KEY] for item in self.model.current_product_materials]
             string_list_model = QStringListModel(material_names)
@@ -227,6 +274,9 @@ class MainController:
             self.view.set_search_field_text(self.model.current_product)
             self.model.current_product = ""
             self.view.set_search_in_materials_checkbox_text(text="")
+            self.view.hide_search_filters_menu()
+            self.view.set_filters_button_enabled(False)
+            self._update_search_placeholder()
 
             suggestions_lst = [" ".join(name) for name in self.model.products_names]
             string_list_model = QStringListModel(suggestions_lst)
@@ -257,6 +307,34 @@ class MainController:
         select_all = state != Qt.Unchecked
         self.model.set_all_materials_selected(select_all)
         self._refresh_table()
+
+    def _material_matches_search(self, item: dict, search_words: list[str]) -> bool:
+        """Checks if a material matches all search words across active filters."""
+        if not search_words:
+            return True
+
+        fields: list[str] = []
+        if self.search_filters.get("name"):
+            fields.append(str(item.get(NOM_KEY, "")).lower())
+        if self.search_filters.get("quantity"):
+            fields.append(str(item.get(QTY_KEY, "")).lower())
+        if self.search_filters.get("unit"):
+            fields.append(str(item.get(UNIT_KEY, "")).lower())
+
+        if not fields:
+            return True
+
+        return all(any(word in value for value in fields) for word in search_words)
+
+    def _update_search_placeholder(self) -> None:
+        """Sets placeholder text based on mode and active filters."""
+        if self.model.search_in_materials:
+            active = [key for key, value in self.search_filters.items() if value]
+            self.view.set_search_field_enabled(bool(active))
+        else:
+            active = ["name"]
+            self.view.set_search_field_enabled(True)
+        self.view.update_search_placeholder(active)
 
     def _update_table(self, data: list[dict]) -> None:
         """Refreshes table data, buttons, and header checkbox state.

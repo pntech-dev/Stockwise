@@ -1,14 +1,19 @@
 from PyQt5.QtCore import QAbstractItemModel, Qt
 from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QAction,
     QCheckBox,
     QCompleter,
     QHeaderView,
     QHBoxLayout,
     QLineEdit,
+    QMenu,
     QTableWidgetItem,
+    QWidgetAction,
     QWidget,
-    QAbstractItemView,
 )
+
+from ui import styles
 
 NOM_KEY = "Номенклатура"
 QTY_KEY = "Количество"
@@ -42,6 +47,19 @@ class MainView:
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.ui.data_tableWidget.setSelectionMode(QAbstractItemView.NoSelection)
         self._setup_header_checkbox()
+        self.filter_menu = None
+        self.filter_actions: dict[str, QWidgetAction] = {}
+        self.filter_checkboxes: dict[str, QCheckBox] = {}
+        self.filter_labels = {
+            "name": "По названию",
+            "quantity": "По количеству",
+            "unit": "По единицам измерения",
+        }
+        self.placeholder_labels = {
+            "name": "названию",
+            "quantity": "количеству",
+            "unit": "единицам измерения",
+        }
 
     def get_search_field_text(self) -> str:
         """Returns the text from the search field."""
@@ -64,6 +82,11 @@ class MainView:
         completer.setCaseSensitivity(0)  # Case-insensitive
         completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
         self.ui.search_line_lineEdit.setCompleter(completer)
+        popup = completer.popup()
+        font = self.ui.search_line_lineEdit.font()
+        font.setPointSize(12)
+        popup.setFont(font)
+        popup.setStyleSheet(styles.FILTER_POPUP_LIST_STYLE)
         return completer
 
     def set_window_enabled_state(self, enabled: bool) -> None:
@@ -82,6 +105,79 @@ class MainView:
         """
         self.ui.search_line_lineEdit.setText(text)
 
+    def setup_search_filters_menu(self, initial_states: dict[str, bool], on_filter_toggled) -> None:
+        """Initializes the search filters popover with checkable actions.
+
+        Args:
+            initial_states: Mapping of filter keys to their default checked state.
+            on_filter_toggled: Callback invoked when a filter action is toggled.
+        """
+        self.filter_menu = QMenu(self.ui.search_filters_pushButton)
+        self.filter_menu.setStyleSheet(styles.FILTER_MENU_STYLE)
+        font = self.ui.search_line_lineEdit.font()
+        font.setPointSize(12)
+        self.filter_menu.setFont(font)
+        self.filter_actions.clear()
+        self.filter_checkboxes.clear()
+
+        for key, label in self.filter_labels.items():
+            checkbox = QCheckBox(label)
+            checkbox.setFont(font)
+            checkbox.setChecked(initial_states.get(key, False))
+            checkbox.stateChanged.connect(
+                lambda state, k=key: on_filter_toggled(k, state == Qt.Checked)
+            )
+            action = QWidgetAction(self.filter_menu)
+            action.setDefaultWidget(checkbox)
+            self.filter_menu.addAction(action)
+            self.filter_actions[key] = action
+            self.filter_checkboxes[key] = checkbox
+
+        self.ui.search_filters_pushButton.clicked.connect(self.show_search_filters_menu)
+
+    def show_search_filters_menu(self) -> None:
+        """Shows the filters popover anchored to the search button."""
+        if not self.filter_menu:
+            return
+        button = self.ui.search_filters_pushButton
+        self.filter_menu.exec_(button.mapToGlobal(button.rect().bottomLeft()))
+
+    def set_filter_checked(self, filter_key: str, checked: bool) -> None:
+        """Updates a filter action's check state without emitting signals."""
+        action = self.filter_actions.get(filter_key)
+        checkbox = self.filter_checkboxes.get(filter_key)
+        if not action or not checkbox:
+            return
+        checkbox.blockSignals(True)
+        checkbox.setChecked(checked)
+        checkbox.blockSignals(False)
+
+    def update_search_placeholder(self, active_filters: list[str]) -> None:
+        """Updates the search field placeholder based on active filters."""
+        labels = [
+            self.placeholder_labels[key]
+            for key in active_filters
+            if key in self.placeholder_labels
+        ]
+        if labels:
+            placeholder = f"Поиск по {', '.join(labels)}..."
+        else:
+            placeholder = "Отключены фильтры поиска"
+        self.ui.search_line_lineEdit.setPlaceholderText(placeholder)
+
+    def hide_search_filters_menu(self) -> None:
+        """Hides the filter menu if it is open."""
+        if self.filter_menu and self.filter_menu.isVisible():
+            self.filter_menu.hide()
+
+    def set_filters_button_enabled(self, enabled: bool) -> None:
+        """Enables or disables the filters button."""
+        self.ui.search_filters_pushButton.setEnabled(enabled)
+
+    def set_search_field_enabled(self, enabled: bool) -> None:
+        """Enables or disables the search input."""
+        self.ui.search_line_lineEdit.setEnabled(enabled)
+
     def set_search_in_materials_checkbox_text(self, text: str) -> None:
         """Sets the text of the 'search in materials' checkbox.
 
@@ -91,14 +187,6 @@ class MainView:
         base_text = "Поиск по материалам изделия"
         checkbox_text = base_text if not text else f"{base_text}: {text}"
         self.ui.search_in_materials_checkBox.setText(checkbox_text)
-
-    def update_clear_button_state(self, enabled: bool) -> None:
-        """Updates the enabled state of the clear button.
-
-        Args:
-            enabled: Whether the clear button should be clickable.
-        """
-        self.ui.search_line_clear_pushButton.setEnabled(enabled)
 
     def update_table_widget_data(
         self,
@@ -174,14 +262,6 @@ class MainView:
             handler: The function to call when the text changes.
         """
         self.ui.search_line_lineEdit.textChanged.connect(handler)
-
-    def clear_button_clicked(self, handler) -> None:
-        """Connects a handler to the clear button's clicked signal.
-
-        Args:
-            handler: The function to call when the button is clicked.
-        """
-        self.ui.search_line_clear_pushButton.clicked.connect(handler)
 
     def create_document_button_clicked(self, handler) -> None:
         """Connects a handler to the create document button's clicked signal.
