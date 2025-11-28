@@ -16,3 +16,6 @@ env/
 # IDEs
 .vscode/
 .idea/
+
+# Files
+config.yaml

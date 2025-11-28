@@ -117,50 +117,41 @@ QProgressBar[error=&quot;true&quot;]::chunk {
     background-color: #EF4444;
 }
 
-
-
-/* === Общие стили для QCheckBox === */
 QCheckBox{
-    color: #0F172A;                /* Акцентный текст */
+    color: #0F172A;
     font-weight: normal;
-    spacing: 8px;                  /* Расстояние между индикатором и текстом */
+    spacing: 8px;
 }
 
-/* Индикатор */
 
 QCheckBox::indicator {
     width: 14px;
     height: 14px;
-    border-radius: 3px;            /* Небольшое скругление углов */
-    border: 1px solid #64748B;     /* Второстепенная рамка */
-    background-color: #FFFFFF;     /* Белый фон */
+    border-radius: 3px;
+    border: 1px solid #64748B;
+    background-color: #FFFFFF;
 }
 
-/* Наведение */
 QCheckBox::indicator:hover {
-    border: 1px solid #2563EB;     /* Акцентная рамка */
+    border: 1px solid #2563EB;
 }
 
-/* Активен (галочка) */
 QCheckBox::indicator:checked {
     border: 1px solid #2563EB;
     background-color: #2563EB;
-    image: url(:/icons/checkbox_check);  /* Собственная белая галочка */
+    image: url(:/icons/checkbox_check);
 }
 
-/* Фокус */
 QCheckBox::indicator:focus {
     border: 1px solid #2563EB;
 }
 
-/* Отключён */
 QCheckBox::indicator:disabled {
     border: 1px solid #F8FAFC;
     background-color: #FFFFFF;
     image: none;
 }
 
-/* Текст отключённого чекбокса */
 QCheckBox:disabled {
     color: #64748B;
 }</string>
