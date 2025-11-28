@@ -56,6 +56,7 @@ class DocumentController:
         # Connect model signals to controller slots
         self.model.show_notification.connect(self.on_show_notification)
         self.model.progress_changed.connect(self.on_progress_bar_changed)
+        self.model.export_fineshed.connect(self.on_export_finished)
 
     def on_completer_highlighted(self, text: str) -> None:
         """Sets a flag to indicate a completer item is highlighted."""
@@ -88,6 +89,8 @@ class DocumentController:
             document_type=document_type,
             save_folder_path=self.view.get_save_folder_path(),
         )
+
+        self.view.set_export_button_state(enabled=False)
 
     def on_show_notification(self, msg_type: str, text: str) -> None:
         """Displays a notification and resets the progress bar."""
@@ -133,6 +136,10 @@ class DocumentController:
         """Updates the progress bar's value and text label."""
         self.view.set_progress_bar_value(value)
         self.view.set_progress_bar_labels_text(text=text, value=value)
+
+    def on_export_finished(self) -> None:
+        """Enabled export button state"""
+        self.view.set_export_button_state(enabled=True)
 
     def _set_lineedits(self) -> None:
         """Populates various line edits with initial data from the model."""

@@ -11,9 +11,20 @@ NOM_KEY = "Номенклатура"
 
 
 class MainController:
-    """The main controller for the application."""
+    """The main controller for the application.
+
+    This class connects the main model and view, handling user interactions
+    and business logic. It manages the application's state, responds to UI
+    events, and coordinates data flow between the model and the view.
+    """
 
     def __init__(self, model, view) -> None:
+        """Initializes the MainController.
+
+        Args:
+            model: The main data model (`MainModel`).
+            view: The main UI view (`MainView`).
+        """
         self.model = model
         self.view = view
         self.is_highlighting: bool = False

@@ -18,10 +18,21 @@ RMP_KEY = "РМП"
 
 
 class DocumentModel(QObject):
-    """Handles document generation logic for product materials."""
+    """Manages data and business logic for the document generation window.
+
+    This class loads necessary configuration, filters materials based on
+    document type, and handles the creation of styled Excel documents in a
+    separate thread to keep the UI responsive.
+
+    Attributes:
+        show_notification: Signal emitting messages for the user.
+        progress_changed: Signal to update the progress bar during export.
+        export_fineshed: Export completion signal.
+    """
 
     show_notification = pyqtSignal(str, str)
     progress_changed = pyqtSignal(str, int)
+    export_fineshed = pyqtSignal()
 
     def __init__(
         self,
@@ -310,6 +321,7 @@ class DocumentModel(QObject):
                 "error",
                 "Путь к шаблонам не задан. Укажите templates_folder_path в config.yaml.",
             )
+            self.export_fineshed.emit()
             return
 
         context = {
@@ -338,10 +350,12 @@ class DocumentModel(QObject):
                 sheet_title = "Заявка"
                 materials_list = self._get_bid_materials_list()
             else:
+                self.export_fineshed.emit()
                 return
 
             if not os.path.exists(template_path):
                 self.show_notification.emit("error", f"Файл шаблона не найден: {template_path}")
+                self.export_fineshed.emit()
                 return
 
             save_path = Path(save_folder_path) / save_filename
@@ -371,10 +385,12 @@ class DocumentModel(QObject):
             wb.save(save_path)
             self.progress_changed.emit("Экспорт завершён", 100)
             self.show_notification.emit("info", f"Экспорт в {save_filename} успешно выполнен")
-
+            self.export_fineshed.emit()
+            
         except Exception as e:
             self.progress_changed.emit("Экспорт не выполнен", 100)
             self.show_notification.emit("error", f"Не удалось выполнить экспорт документа: {e}")
+            self.export_fineshed.emit()
 
     def _sanitize_filename(self, name: str) -> str:
         """Strips invalid characters from a filename-friendly string.

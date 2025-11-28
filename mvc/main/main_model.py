@@ -17,7 +17,15 @@ RMP_KEY = "РМП"
 
 
 class MainModel(QObject):
-    """Manages application data and core business logic."""
+    """Manages the application's data and business logic.
+
+    This class handles loading configuration, finding and processing product data,
+    checking for updates, and exporting data to Excel. It communicates with
+    the controller/view using signals.
+
+    Attributes:
+        show_notification: A signal that emits messages to be displayed to the user.
+    """
 
     show_notification = pyqtSignal(str, str)
 

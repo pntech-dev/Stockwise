@@ -5,8 +5,9 @@ Design:
 
 
 New features:
-    - Added checkboxes for rows in the table. Now you can select specific lines to export.
+    - Added checkboxes for rows in the table. Now you can select specific lines to export
 
 
 Bugs:
     - Localization has been fixed
+    - Fixed an issue where the document creation button would not turn off during export
