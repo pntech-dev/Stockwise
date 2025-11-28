@@ -229,11 +229,11 @@ class MainController:
         if is_version_ok is None:
             action = Notification().show_action_message(
                 msg_type="error",
-                title="Version Check Error",
-                text="An error occurred during the version check!\n" 
-                "This may be related to the configuration file path.\n" 
-                "Do you want to open the configuration file?",
-                buttons=["Yes", "No"],
+                title="Ошибка проверки версии",
+                text="При проверке версии произошла ошибка!\n" 
+                "Это может быть связано с путем к файлу конфигурации.\n" 
+                "Хотите открыть файл конфигурации?",
+                buttons=["Да, открыть", "Нет, выйти"],
             )
             if action:
                 self.model.open_config_file()
@@ -243,10 +243,10 @@ class MainController:
         elif not is_version_ok:
             action = Notification().show_action_message(
                 msg_type="warning",
-                title="Update Available",
-                text="A new version of the program has been detected.\n" 
-                "Do you want to update?",
-                buttons=["Update", "Close"],
+                title="Доступно обновление",
+                text="Обнаружена новая версия программы.\n" 
+                "Хотите обновить?",
+                buttons=["Обновить", "Закрыть"],
             )
             if action:
                 self.model.update_program()

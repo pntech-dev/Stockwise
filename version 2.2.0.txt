@@ -1,0 +1,7 @@
+Design:
+    - Redesigned the appearance of the table
+    - The "Export" and "Create document" buttons are swapped
+    - Minor changes in UI elements
+
+Bugs:
+    - Localization has been fixed

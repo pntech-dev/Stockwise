@@ -101,28 +101,11 @@ QSpinBox::up-button, QSpinBox::down-button {
     background: transparent;
 }
 
-QProgressBar {
-    border: 1px solid #DBEAFE;
-    border-radius: 6px;
-    background-color: white;
-    text-align: center;
-}
-
-QProgressBar::chunk {
-    background-color: #10B981;
-    border-radius: 6px;
-}
-
-QProgressBar[error=&quot;true&quot;]::chunk {
-    background-color: #EF4444;
-}
-
 QCheckBox{
     color: #0F172A;
     font-weight: normal;
     spacing: 8px;
 }
-
 
 QCheckBox::indicator {
     width: 14px;
@@ -154,7 +137,102 @@ QCheckBox::indicator:disabled {
 
 QCheckBox:disabled {
     color: #64748B;
-}</string>
+}
+
+QTableView,
+QTableWidget {
+    background-color: #ffffff;
+    border: 1px solid #d7dde9;
+    border-radius: 6px;
+    gridline-color: #e1e6f2;
+    selection-background-color: #2563EB;
+    selection-color: #ffffff;
+    alternate-background-color: #fafbff;
+    color: #1f2937;
+}
+
+QTableView::item,
+QTableWidget::item {
+    padding: 4px 8px;
+}
+
+QTableView::item:selected,
+QTableWidget::item:selected {
+    background-color: #2563EB;
+    color: #ffffff;
+}
+
+QTableView::item:hover:!selected,
+QTableWidget::item:hover:!selected {
+    background-color: #eef2fb;
+}
+
+QHeaderView::section {
+    background-color: #f6f7fb;
+    color: #374151;
+    padding: 4px 6px;
+    border: none;
+    border-right: 1px solid #e1e6f2;
+    border-bottom: 1px solid #d7dde9;
+    font-weight: 600;
+}
+
+QHeaderView::section:vertical {
+    background-color: #f2f4fa;
+    color: #4b5563;
+    padding: 2px 4px;
+    font-weight: 600;
+}
+
+QTableCornerButton::section {
+    background-color: #f6f7fb;
+    border: none;
+    border-right: 1px solid #d7dde9;
+    border-bottom: 1px solid #d7dde9;
+}
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 2px 0 2px 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #d3d9e8;
+    min-height: 20px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #c5ccdd;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0;
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 10px;
+    margin: 0 2px 0 2px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #d3d9e8;
+    min-width: 20px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #c5ccdd;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0;
+}
+</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="styleSheet">
@@ -186,7 +264,7 @@ QCheckBox:disabled {
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <property name="spacing">
-        <number>8</number>
+        <number>16</number>
        </property>
        <property name="leftMargin">
         <number>16</number>
@@ -439,8 +517,14 @@ QCheckBox:disabled {
            <pointsize>12</pointsize>
           </font>
          </property>
-         <attribute name="horizontalHeaderStretchLastSection">
+         <property name="editTriggers">
+          <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::EditKeyPressed</set>
+         </property>
+         <property name="alternatingRowColors">
           <bool>true</bool>
+         </property>
+         <attribute name="horizontalHeaderStretchLastSection">
+          <bool>false</bool>
          </attribute>
          <attribute name="verticalHeaderStretchLastSection">
           <bool>true</bool>
@@ -466,7 +550,7 @@ QCheckBox:disabled {
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <property name="spacing">
-        <number>8</number>
+        <number>16</number>
        </property>
        <property name="leftMargin">
         <number>16</number>
@@ -480,6 +564,34 @@ QCheckBox:disabled {
        <property name="bottomMargin">
         <number>16</number>
        </property>
+       <item>
+        <widget class="QPushButton" name="export_pushButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <kerning>true</kerning>
+          </font>
+         </property>
+         <property name="text">
+          <string>Экспортировать</string>
+         </property>
+        </widget>
+       </item>
        <item>
         <widget class="QPushButton" name="create_document_pushButton">
          <property name="enabled">
@@ -529,34 +641,6 @@ QPushButton:disabled {
          </property>
          <property name="text">
           <string>Создать документ</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="export_pushButton">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <kerning>true</kerning>
-          </font>
-         </property>
-         <property name="text">
-          <string>Экспортировать</string>
          </property>
         </widget>
        </item>

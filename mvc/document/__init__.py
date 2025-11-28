@@ -5,6 +5,7 @@ This module provides a function to instantiate and assemble the MVC components
 """
 
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow
 
 from ui.documentUI import Ui_MainWindow as DocumentUi
@@ -12,6 +13,8 @@ from ui.documentUI import Ui_MainWindow as DocumentUi
 from .document_controller import DocumentController
 from .document_model import DocumentModel
 from .document_view import DocumentView
+
+from resources import resources_rc
 
 
 def create_document_window(
@@ -36,6 +39,7 @@ def create_document_window(
         A fully configured QMainWindow instance for the document view.
     """
     window = QMainWindow()
+    window.setWindowIcon(QIcon(":/icons/icon.ico"))
 
     ui = DocumentUi()
     ui.setupUi(window)

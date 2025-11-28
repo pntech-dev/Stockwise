@@ -64,7 +64,7 @@ class MainView:
         Args:
             text: The product name to display, or an empty string to reset.
         """
-        base_text = "Search within product materials"
+        base_text = "Поиск по материалам изделия"
         checkbox_text = base_text if not text else f"{base_text}: {text}"
         self.ui.search_in_materials_checkBox.setText(checkbox_text)
 
