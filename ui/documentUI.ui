@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Создание документа</string>
+   <string>Создание документа - Stockwise</string>
   </property>
   <property name="styleSheet">
    <string notr="true">QMainWindow {
@@ -1218,6 +1218,9 @@ QDateEdit::down-arrow:disabled {
                  <pointsize>12</pointsize>
                 </font>
                </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
                <property name="text">
                 <string>Выбрать</string>
                </property>
@@ -1301,6 +1304,9 @@ QDateEdit::down-arrow:disabled {
                  <pointsize>12</pointsize>
                 </font>
                </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
                <property name="text">
                 <string>Докладная</string>
                </property>
@@ -1312,6 +1318,9 @@ QDateEdit::down-arrow:disabled {
                 <font>
                  <pointsize>12</pointsize>
                 </font>
+               </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
                </property>
                <property name="text">
                 <string>Заявка</string>
@@ -1360,6 +1369,9 @@ QDateEdit::down-arrow:disabled {
            <weight>75</weight>
            <bold>true</bold>
           </font>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
          </property>
          <property name="styleSheet">
           <string notr="true">QPushButton {

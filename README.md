@@ -52,8 +52,8 @@ Both document types support:
 The program allows you to search **within the materials of the selected product**, and not just by product names.
 
 - Check box: `[ ] Search for materials`  
-- After selecting a product (for example, *BVB.01*):
-`[✓] Search for materials — BVV.01`  
+- After selecting a product (for example, *BKN.0.12*):
+`[✓] Search for materials — BKN.0.12`  
 - The search is performed only by the nomenclature within the specification of the selected product  
 - Convenient for large specifications with dozens of Excel files  
 
@@ -98,7 +98,7 @@ It stores product groups.
 Each product is a set of subfolders.  
 Example:
 ```
-\Stockwise\БВВ.01\.xlsx
+\Stockwise\БКН.0.12\.xlsx
 ```
 
 ### 3. Specification files  
@@ -160,7 +160,7 @@ The **Stockwise.spec** file is used to build the program.
 pip install pyinstaller
 ```
 
-###2. Building the app
+### 2. Building the app
 Run the command in the root of the project:
 
 ```bash

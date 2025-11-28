@@ -583,6 +583,7 @@ class Ui_MainWindow(object):
         font.setFamily("Segoe UI")
         font.setPointSize(12)
         self.save_file_path_line_choose_pushButton.setFont(font)
+        self.save_file_path_line_choose_pushButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.save_file_path_line_choose_pushButton.setObjectName("save_file_path_line_choose_pushButton")
         self.horizontalLayout_12.addWidget(self.save_file_path_line_choose_pushButton)
         self.verticalLayout_10.addWidget(self.save_file_path_line_frame)
@@ -616,12 +617,14 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(12)
         self.document_radioButton.setFont(font)
+        self.document_radioButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.document_radioButton.setObjectName("document_radioButton")
         self.horizontalLayout_14.addWidget(self.document_radioButton)
         self.bid_radioButton = QtWidgets.QRadioButton(self.document_type_frame)
         font = QtGui.QFont()
         font.setPointSize(12)
         self.bid_radioButton.setFont(font)
+        self.bid_radioButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.bid_radioButton.setObjectName("bid_radioButton")
         self.horizontalLayout_14.addWidget(self.bid_radioButton)
         spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -637,6 +640,7 @@ class Ui_MainWindow(object):
         font.setBold(True)
         font.setWeight(75)
         self.export_pushButton.setFont(font)
+        self.export_pushButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.export_pushButton.setStyleSheet("QPushButton {\n"
 "    background-color: #2563EB;\n"
 "    border-radius: 6px;\n"
@@ -724,7 +728,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Создание документа"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Создание документа - Stockwise"))
         self.number_label.setText(_translate("MainWindow", "Исх №:"))
         self.number_lineEdit.setPlaceholderText(_translate("MainWindow", "150"))
         self.date_label.setText(_translate("MainWindow", "Дата:"))

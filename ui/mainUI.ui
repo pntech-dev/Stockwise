@@ -395,6 +395,9 @@ QScrollBar::sub-line:horizontal {
               <kerning>true</kerning>
              </font>
             </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -426,6 +429,9 @@ QScrollBar::sub-line:horizontal {
           <font>
            <pointsize>12</pointsize>
           </font>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
          </property>
          <property name="text">
           <string>Поиск по материалам изделия</string>
@@ -503,6 +509,9 @@ QScrollBar::sub-line:horizontal {
            <pointsize>12</pointsize>
           </font>
          </property>
+         <property name="cursor">
+          <cursorShape>IBeamCursor</cursorShape>
+         </property>
          <property name="maximum">
           <number>999999</number>
          </property>
@@ -563,6 +572,9 @@ QScrollBar::sub-line:horizontal {
           <font>
            <pointsize>12</pointsize>
           </font>
+         </property>
+         <property name="cursor" stdset="0">
+          <cursorShape>ArrowCursor</cursorShape>
          </property>
          <property name="editTriggers">
           <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::EditKeyPressed</set>
@@ -634,6 +646,9 @@ QScrollBar::sub-line:horizontal {
            <kerning>true</kerning>
           </font>
          </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
          <property name="text">
           <string>Экспортировать</string>
          </property>
@@ -662,6 +677,9 @@ QScrollBar::sub-line:horizontal {
            <weight>75</weight>
            <bold>true</bold>
           </font>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
          </property>
          <property name="styleSheet">
           <string notr="true">QPushButton {

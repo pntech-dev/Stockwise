@@ -305,6 +305,7 @@ class Ui_MainWindow(object):
         font.setPointSize(12)
         font.setKerning(True)
         self.search_filters_pushButton.setFont(font)
+        self.search_filters_pushButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.search_filters_pushButton.setText("")
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/icons/filters/default.svg"), QtGui.QIcon.Normal, QtGui.QIcon.On)
@@ -323,6 +324,7 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(12)
         self.search_in_materials_checkBox.setFont(font)
+        self.search_in_materials_checkBox.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.search_in_materials_checkBox.setObjectName("search_in_materials_checkBox")
         self.verticalLayout_2.addWidget(self.search_in_materials_checkBox)
         self.verticalLayout_6.addWidget(self.search_frame)
@@ -357,6 +359,7 @@ class Ui_MainWindow(object):
         font.setFamily("Segoe UI")
         font.setPointSize(12)
         self.norms_calculations_spinBox.setFont(font)
+        self.norms_calculations_spinBox.setCursor(QtGui.QCursor(QtCore.Qt.IBeamCursor))
         self.norms_calculations_spinBox.setMaximum(999999)
         self.norms_calculations_spinBox.setProperty("value", 1)
         self.norms_calculations_spinBox.setObjectName("norms_calculations_spinBox")
@@ -377,6 +380,7 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(12)
         self.data_tableWidget.setFont(font)
+        self.data_tableWidget.viewport().setProperty("cursor", QtGui.QCursor(QtCore.Qt.ArrowCursor))
         self.data_tableWidget.setEditTriggers(QtWidgets.QAbstractItemView.AnyKeyPressed|QtWidgets.QAbstractItemView.EditKeyPressed)
         self.data_tableWidget.setAlternatingRowColors(True)
         self.data_tableWidget.setObjectName("data_tableWidget")
@@ -407,6 +411,7 @@ class Ui_MainWindow(object):
         font.setPointSize(12)
         font.setKerning(True)
         self.export_pushButton.setFont(font)
+        self.export_pushButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.export_pushButton.setObjectName("export_pushButton")
         self.verticalLayout_5.addWidget(self.export_pushButton)
         self.create_document_pushButton = QtWidgets.QPushButton(self.create_document_frame)
@@ -418,6 +423,7 @@ class Ui_MainWindow(object):
         font.setBold(True)
         font.setWeight(75)
         self.create_document_pushButton.setFont(font)
+        self.create_document_pushButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.create_document_pushButton.setStyleSheet("QPushButton {\n"
 "    background-color: #2563EB;\n"
 "    border-radius: 6px;\n"
