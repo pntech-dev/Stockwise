@@ -80,7 +80,11 @@ class MainModel(QObject):
             return semi_finished_products
         except Exception as e:
             self.current_semi_finished_products = []
-            self.show_notification.emit("error", f"Failed to collect semi-finished products: {e}")
+            self.show_notification.emit(
+                "error", 
+                f"Произошла ошибка в процессе объединения полуфабрикатов {e}"
+                )
+            
             return []
 
     def get_product_materials(self, semi_finished_products: List[str]) -> List[Dict]:
@@ -99,7 +103,7 @@ class MainModel(QObject):
 
         for file_path in semi_finished_products:
             if not os.path.exists(file_path):
-                self.show_notification.emit("error", f"File not found: {file_path}")
+                self.show_notification.emit("error", f"Файл не найден.\nПуть: {file_path}")
                 continue
 
             try:
@@ -125,7 +129,10 @@ class MainModel(QObject):
                         product_materials_dict[nomenclature] = item
 
             except Exception as e:
-                self.show_notification.emit("error", f"Failed to read file {os.path.basename(file_path)}: {e}")
+                self.show_notification.emit(
+                    "error", 
+                    f"Произошла ошибка в процессе чтения файла: {os.path.basename(file_path)}: {e}"
+                    )
 
         return list(product_materials_dict.values())
 
@@ -188,8 +195,13 @@ class MainModel(QObject):
             if onedrive_en.exists():
                 return onedrive_en
             return home / "Desktop"
+        
         except Exception as e:
-            self.show_notification.emit("error", f"Failed to resolve Desktop path: {e}")
+            self.show_notification.emit(
+                "error", 
+                f"Не удалось определить путь к рабочему столу: {e}"
+                )
+            
             return None
 
     def check_program_version(self) -> Optional[bool]:
@@ -218,7 +230,7 @@ class MainModel(QObject):
         """Refreshes the products list by scanning the configured folder."""
         if not self.is_products_folder_available:
             self.products_names = []
-            self.show_notification.emit("error", "Products folder is not available.")
+            self.show_notification.emit("error", "Папка изделий недоступна")
             return
 
         products: List[List[str]] = []
@@ -233,19 +245,45 @@ class MainModel(QObject):
                         products.append(relative_path.split(os.sep))
             self.products_names = products
         except Exception as e:
-            self.show_notification.emit("error", f"Failed to scan products: {e}")
+            self.show_notification.emit(
+                "error", 
+                f"Произошла ошибка в процесее сканирования продуктов{e}"
+                )
 
     def update_program(self) -> None:
         """Launches the updater executable with admin rights."""
         updater_path = os.path.join(os.getcwd(), "updater.exe")
         if not os.path.exists(updater_path):
-            self.show_notification.emit("error", f"updater.exe not found: {updater_path}")
+            self.show_notification.emit(
+                "error", 
+                f"Программа автоматического обновления не найдена.\nПуть: {updater_path}"
+                )
+            
             return
+        
         try:
             command = f'Start-Process "{updater_path}" -ArgumentList "{self.program_server_path}" -Verb RunAs'
             subprocess.run(["powershell", "-Command", command], check=True, shell=True)
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
-            self.show_notification.emit("error", f"Failed to launch updater: {e}")
+            self.show_notification.emit(
+                "error", 
+                f"Во время запуска программы автоматического удаления произошла ошибка: {e}"
+                )
+
+    def open_config_file(self) -> None:
+        """Launches the config file"""
+        config_path = os.path.join(os.getcwd(), "config.yaml")
+        if not os.path.exists(config_path):
+            self.show_notification.emit("error", f"Файл конфигурации не найден.\nПуть: {config_path}")
+            return
+        
+        try:
+            os.startfile(config_path)
+        except Exception as e:
+            self.show_notification.emit(
+                "error", 
+                f"Произошла ошибка в процессе открытия файла конфигурации: {e}"
+                )
 
     def export_data(self) -> None:
         """Exports selected materials to Excel using the table template.
