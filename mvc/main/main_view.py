@@ -1,5 +1,18 @@
-from PyQt5.QtCore import QAbstractItemModel
-from PyQt5.QtWidgets import QCompleter, QHeaderView, QLineEdit, QTableWidgetItem
+from PyQt5.QtCore import QAbstractItemModel, Qt
+from PyQt5.QtWidgets import (
+    QCheckBox,
+    QCompleter,
+    QHeaderView,
+    QHBoxLayout,
+    QLineEdit,
+    QTableWidgetItem,
+    QWidget,
+    QAbstractItemView,
+)
+
+NOM_KEY = "Номенклатура"
+QTY_KEY = "Количество"
+UNIT_KEY = "Ед. изм."
 
 
 class MainView:
@@ -19,13 +32,16 @@ class MainView:
         self.ui = ui
 
         # Table setup
-        headers = ["Номенклатура", "Количество", "Ед. изм."]
+        headers = ["", NOM_KEY, QTY_KEY, UNIT_KEY]
         self.ui.data_tableWidget.setColumnCount(len(headers))
         self.ui.data_tableWidget.setHorizontalHeaderLabels(headers)
         header = self.ui.data_tableWidget.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.ui.data_tableWidget.setSelectionMode(QAbstractItemView.NoSelection)
+        self._setup_header_checkbox()
 
     def get_search_field_text(self) -> str:
         """Returns the text from the search field."""
@@ -72,11 +88,18 @@ class MainView:
         """Updates the enabled state of the clear button."""
         self.ui.search_line_clear_pushButton.setEnabled(enabled)
 
-    def update_table_widget_data(self, data: list[dict]) -> None:
+    def update_table_widget_data(
+        self,
+        data: list[dict],
+        selection: dict[str, bool],
+        on_row_checkbox_changed,
+    ) -> None:
         """Updates the data in the materials table.
 
         Args:
             data: A list of dictionaries, where each dictionary is a row.
+            selection: Mapping of material names to their checkbox state.
+            on_row_checkbox_changed: Callback invoked when a row checkbox changes.
         """
         self.ui.data_tableWidget.setRowCount(0)  # Clear only the rows
 
@@ -84,17 +107,33 @@ class MainView:
         for row_index, item in enumerate(data):
             self.ui.data_tableWidget.insertRow(row_index)
 
+            # Column "Select"
+            material_name = item.get(NOM_KEY, "")
+            checkbox = QCheckBox()
+            checkbox.setChecked(selection.get(material_name, True))
+            checkbox.stateChanged.connect(
+                lambda state, name=material_name: on_row_checkbox_changed(
+                    name, state == Qt.Checked
+                )
+            )
+            checkbox_container = QWidget()
+            layout = QHBoxLayout(checkbox_container)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setAlignment(Qt.AlignCenter)
+            layout.addWidget(checkbox)
+            self.ui.data_tableWidget.setCellWidget(row_index, 0, checkbox_container)
+
             # Column "Nomenclature"
-            nomenclature_item = QTableWidgetItem(item.get("Номенклатура", ""))
-            self.ui.data_tableWidget.setItem(row_index, 0, nomenclature_item)
+            nomenclature_item = QTableWidgetItem(item.get(NOM_KEY, ""))
+            self.ui.data_tableWidget.setItem(row_index, 1, nomenclature_item)
 
             # Column "Quantity"
-            quantity_item = QTableWidgetItem(str(item.get("Количество", "")))
-            self.ui.data_tableWidget.setItem(row_index, 1, quantity_item)
+            quantity_item = QTableWidgetItem(str(item.get(QTY_KEY, "")))
+            self.ui.data_tableWidget.setItem(row_index, 2, quantity_item)
 
             # Column "Unit"
-            unit_item = QTableWidgetItem(item.get("Ед. изм.", ""))
-            self.ui.data_tableWidget.setItem(row_index, 2, unit_item)
+            unit_item = QTableWidgetItem(item.get(UNIT_KEY, ""))
+            self.ui.data_tableWidget.setItem(row_index, 3, unit_item)
 
     def update_create_document_button_state(self, enabled: bool) -> None:
         """Updates the enabled state of the create document button."""
@@ -159,3 +198,40 @@ class MainView:
         self.ui.search_in_materials_checkBox.stateChanged.connect(
             lambda state: handler(state == 2)
         )
+
+    def header_checkbox_state_changed(self, handler) -> None:
+        """Connects a handler to the header checkbox."""
+        self.header_checkbox.stateChanged.connect(handler)
+
+    def set_header_checkbox_state(self, state: int) -> None:
+        """Sets the header checkbox state without emitting signals."""
+        self.header_checkbox.blockSignals(True)
+        self.header_checkbox.setCheckState(state)
+        self.header_checkbox.blockSignals(False)
+
+    def set_header_checkbox_enabled(self, enabled: bool) -> None:
+        """Enables or disables the header checkbox."""
+        self.header_checkbox.setEnabled(enabled)
+
+    def _setup_header_checkbox(self) -> None:
+        """Initializes the header checkbox and positions it."""
+        header = self.ui.data_tableWidget.horizontalHeader()
+        self.header_checkbox = QCheckBox(header)
+        self.header_checkbox.setTristate(True)
+        self.header_checkbox.setChecked(True)
+        header.sectionResized.connect(self._update_header_checkbox_position)
+        header.sectionMoved.connect(self._update_header_checkbox_position)
+        self._update_header_checkbox_position()
+
+    def _update_header_checkbox_position(self) -> None:
+        """Centers the header checkbox within its section."""
+        header = self.ui.data_tableWidget.horizontalHeader()
+        if header.count() == 0:
+            return
+
+        section_x = header.sectionPosition(0)
+        section_width = header.sectionSize(0)
+        size = self.header_checkbox.sizeHint()
+        x = section_x + (section_width - size.width()) // 2
+        y = (header.height() - size.height()) // 2
+        self.header_checkbox.setGeometry(x, y, size.width(), size.height())

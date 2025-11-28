@@ -8,17 +8,14 @@ from openpyxl import load_workbook
 from PyQt5.QtCore import QObject, pyqtSignal
 from openpyxl.styles import Alignment, Border, Font, Side
 
+NOM_KEY = "Номенклатура"
+QTY_KEY = "Количество"
+UNIT_KEY = "Ед. изм."
+RMP_KEY = "РМП"
+
 
 class MainModel(QObject):
-    """Manages the application's data and business logic.
-
-    This class handles loading configuration, finding and processing product data,
-    checking for updates, and exporting data to Excel. It communicates with
-    the controller/view using signals.
-
-    Attributes:
-        show_notification: A signal that emits messages to be displayed to the user.
-    """
+    """Manages the application's data and business logic."""
 
     show_notification = pyqtSignal(str, str)
 
@@ -41,19 +38,14 @@ class MainModel(QObject):
         self.current_product: str = ""
         self.current_product_path: str = ""
         self.current_product_materials: list[dict] = []
+        self.material_selection: dict[str, bool] = {}
         self.norms_calculations_value: int = 1
         self.search_in_materials: bool = False
         self.search_in_materials_data: list[dict] = []
 
     def get_semi_finished_products(self, product_name: tuple) -> list[str]:
-        """Gets a list of semi-finished product files for a given product.
+        """Gets a list of semi-finished product files for a given product."""
 
-        Args:
-            product_name: A tuple representing the path components of the product.
-
-        Returns:
-            A list of full paths to the semi-finished product Excel files.
-        """
         def add_file(file_path: str, file_list: list[str]) -> None:
             """Adds a file to the list if it is a valid Excel file."""
             if os.path.isfile(file_path) and file_path.lower().endswith(
@@ -70,7 +62,7 @@ class MainModel(QObject):
                 for item_name in os.listdir(product_path):
                     item_path = os.path.join(product_path, item_name)
                     # Handle the 'RMP' (raw material product) special folder
-                    if item_name.lower() == "рмп" and os.path.isdir(item_path):
+                    if item_name.lower() == "��??��??��?��?" and os.path.isdir(item_path):
                         for rmp_file_name in os.listdir(item_path):
                             rmp_file_path = os.path.join(item_path, rmp_file_name)
                             add_file(rmp_file_path, semi_finished_products)
@@ -79,24 +71,14 @@ class MainModel(QObject):
             return semi_finished_products
         except Exception as e:
             self.show_notification.emit(
-                "error", f"Ошибка при получении списка полуфабрикатов: {e}"
+                "error", f"Failed to collect semi-finished products: {e}"
             )
             return []
 
     def get_product_materials(
         self, semi_finished_products: list[str]
     ) -> list[dict]:
-        """Aggregates all materials from a list of semi-finished product files.
-
-        Reads each Excel file, calculates material quantities based on the norm,
-        and aggregates identical materials by summing their quantities.
-
-        Args:
-            semi_finished_products: A list of paths to semi-finished product files.
-
-        Returns:
-            A list of dictionaries, where each dictionary represents a unique material.
-        """
+        """Aggregates all materials from a list of semi-finished product files."""
         product_materials_dict = {}
         semi_product_names = [
             os.path.splitext(os.path.basename(p))[0].lower().strip()
@@ -105,58 +87,74 @@ class MainModel(QObject):
 
         for file_path in semi_finished_products:
             if not os.path.exists(file_path):
-                self.show_notification.emit("error", f"Файл не найден: {file_path}")
+                self.show_notification.emit(
+                    "error", f"File not found: {file_path}"
+                )
                 continue
 
             try:
                 is_rmp = (
-                    os.path.basename(os.path.dirname(file_path)).lower() == "рмп"
+                    os.path.basename(os.path.dirname(file_path)).lower() == "��??��??��?��?"
                 )
-                df = pd.read_excel(
-                    file_path,
-                    sheet_name="TDSheet",
-                    usecols=["Номенклатура", "Количество", "Ед. изм."],
-                )
-                df = df.dropna(subset=["Номенклатура"])
+                df = pd.read_excel(file_path, sheet_name="TDSheet")
+                df = self._normalize_material_columns(df)
+                df = df.dropna(subset=[NOM_KEY])
                 df = df.fillna("")
 
                 for item in df.to_dict("records"):
-                    nomenclature = item["Номенклатура"]
+                    nomenclature = item[NOM_KEY]
                     # Skip materials that are themselves semi-finished products
                     if nomenclature.lower().strip() in semi_product_names:
                         continue
 
                     # Calculate quantity based on norm
-                    quantity = item["Количество"] / 1000
+                    quantity = item[QTY_KEY] / 1000
                     if self.norms_calculations_value != 1:
                         quantity *= self.norms_calculations_value
-                    item["Количество"] = quantity
-                    item["РМП"] = is_rmp
+                    item[QTY_KEY] = quantity
+                    item[RMP_KEY] = is_rmp
 
                     # Aggregate materials
                     if nomenclature in product_materials_dict:
-                        product_materials_dict[nomenclature]["Количество"] += quantity
+                        product_materials_dict[nomenclature][QTY_KEY] += quantity
                     else:
                         product_materials_dict[nomenclature] = item
 
             except Exception as e:
                 self.show_notification.emit(
-                    "error", f"Ошибка при чтении файла {os.path.basename(file_path)}: {e}"
+                    "error", f"Failed to read file {os.path.basename(file_path)}: {e}"
                 )
 
         return list(product_materials_dict.values())
 
+    def sync_material_selection(
+        self, materials: list[dict], reset: bool = False
+    ) -> None:
+        """Keeps the materials selection map in sync with the current dataset."""
+        new_selection = {}
+        for item in materials:
+            name = item[NOM_KEY]
+            if reset or name not in self.material_selection:
+                new_selection[name] = True
+            else:
+                new_selection[name] = self.material_selection[name]
+        self.material_selection = new_selection
+
+    def set_material_selected(self, name: str, is_selected: bool) -> None:
+        """Updates selection state for a single material."""
+        if name in self.material_selection:
+            self.material_selection[name] = is_selected
+
+    def set_all_materials_selected(self, is_selected: bool) -> None:
+        """Sets selection state for all materials."""
+        for key in list(self.material_selection.keys()):
+            self.material_selection[key] = is_selected
+
     def get_desktop_path(self) -> Path | None:
-        """Finds the path to the user's desktop folder.
-
-        Checks for common OneDrive and standard desktop paths.
-
-        Returns:
-            A Path object to the desktop, or None if an error occurs.
-        """
+        """Finds the path to the user's desktop folder."""
         try:
             # Check for Russian OneDrive path
-            onedrive_ru = Path.home() / "OneDrive" / "Рабочий стол"
+            onedrive_ru = Path.home() / "OneDrive" / "�����+��?�?�� ��?�?'��?�?>"
             if onedrive_ru.exists():
                 return onedrive_ru
 
@@ -168,17 +166,11 @@ class MainModel(QObject):
             # Fallback to standard Desktop path
             return Path.home() / "Desktop"
         except Exception as e:
-            self.show_notification.emit("error", f"Ошибка при получении пути к рабочему столу: {e}")
+            self.show_notification.emit("error", f"Failed to resolve Desktop path: {e}")
             return None
 
     def check_program_version(self) -> bool | None:
-        """Checks if the local program version is up-to-date with the server.
-
-        Returns:
-            True if the version is current or newer.
-            False if an update is needed.
-            None if an error occurred (e.g., server path not found).
-        """
+        """Checks if the local program version is up-to-date with the server."""
         if not self.program_server_path or not os.path.exists(self.program_server_path):
             return None
 
@@ -204,15 +196,18 @@ class MainModel(QObject):
         """Recursively finds all products in the products folder."""
         if not self.is_products_folder_available:
             self.products_names = []
-            self.show_notification.emit("error", "Папка с продукцией недоступна на сервере.")
+            self.show_notification.emit(
+                "error",
+                "Products folder is not available.",
+            )
             return
 
         products = []
         try:
             for root, dirs, _ in os.walk(self.path_to_products_folder):
                 # Exclude the 'rmp' directory from the walk
-                if "рмп" in [d.lower() for d in dirs]:
-                    dirs.remove("рмп" if "рмп" in dirs else "РМП")
+                if "��??��??��?��?" in [d.lower() for d in dirs]:
+                    dirs.remove("��??��??��?��?" if "��??��??��?��?" in dirs else "��??��?")
 
                 # A directory is considered a product if it has no subdirectories
                 if not dirs:
@@ -222,14 +217,16 @@ class MainModel(QObject):
             self.products_names = products
         except Exception as e:
             self.show_notification.emit(
-                "error", f"Ошибка при обновлении списка наименований продукции: {e}"
+                "error", f"Failed to scan products: {e}"
             )
 
     def update_program(self) -> None:
         """Launches the updater executable with administrator privileges."""
         updater_path = os.path.join(os.getcwd(), "updater.exe")
         if not os.path.exists(updater_path):
-            self.show_notification.emit("error", f"Программа обновления не найдена: {updater_path}")
+            self.show_notification.emit(
+                "error", f"Updater executable not found: {updater_path}"
+            )
             return
 
         try:
@@ -237,32 +234,34 @@ class MainModel(QObject):
             command = f'Start-Process "{updater_path}" -ArgumentList "{self.program_server_path}" -Verb RunAs'
             subprocess.run(["powershell", "-Command", command], check=True, shell=True)
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
-            self.show_notification.emit("error", f"Не удалось запустить программу обновления: {e}")
+            self.show_notification.emit(
+                "error", f"Failed to launch updater: {e}"
+            )
 
     def export_data(self) -> None:
         """Exports the current materials list to a styled Excel file."""
         try:
             workbook = load_workbook("templates/table.xlsx")
             sheet = workbook.active
-            sheet.title = "Список материалов"
+            sheet.title = self._sanitize_sheet_title("Материалы")
 
-            data = (
-                self.search_in_materials_data
-                if self.search_in_materials
-                else self.current_product_materials
-            )
-            
-            if not data:
+            selected_data = [
+                item
+                for item in self.current_product_materials
+                if self.material_selection.get(item[NOM_KEY], True)
+            ]
+
+            if not selected_data:
                 self.show_notification.emit("warning", "Нет данных для экспорта.")
                 return
 
             # --- Fill data ---
             start_row = 2
-            for i, item in enumerate(data):
+            for i, item in enumerate(selected_data):
                 row_idx = start_row + i
-                sheet.cell(row=row_idx, column=1, value=item["Номенклатура"])
-                sheet.cell(row=row_idx, column=2, value=item["Ед. изм."])
-                sheet.cell(row=row_idx, column=3, value=item["Количество"])
+                sheet.cell(row=row_idx, column=1, value=item[NOM_KEY])
+                sheet.cell(row=row_idx, column=2, value=item[UNIT_KEY])
+                sheet.cell(row=row_idx, column=3, value=item[QTY_KEY])
 
             # --- Apply styles ---
             font = Font(name="Times New Roman", size=14)
@@ -300,22 +299,30 @@ class MainModel(QObject):
             desktop_path = self.get_desktop_path()
             if not desktop_path:
                 self.show_notification.emit(
-                    "error", "Не удалось определить путь к рабочему столу для сохранения файла."
+                    "error", "Не удалось определить путь сохранения."
                 )
                 return
 
-            file_name = f"Список материалов для {self.current_product}.xlsx"
+            file_name = f"Материалы изделия {self.current_product}.xlsx"
             file_path = desktop_path / file_name
             workbook.save(file_path)
 
-            self.show_notification.emit("info", f"Файл сохранен на рабочем столе: {file_name}")
+            self.show_notification.emit(
+                "info", f"Экспорт выполнен: {file_name}"
+            )
 
         except Exception as e:
             self.show_notification.emit(
-                "error", f"Произошла ошибка при создании списка материалов: {e}"
+                "error", f"Не удалось выполнить экспорт: {e}"
             )
         finally:
-            self.show_notification.emit("", "") # Resets status bar and enables window
+            self.show_notification.emit("", "")  # Resets status bar and enables window
+
+    def _sanitize_sheet_title(self, title: str) -> str:
+        """Removes invalid characters from Excel sheet titles."""
+        invalid_chars = set(r'[]:*?/\\')
+        sanitized = "".join(ch for ch in title if ch not in invalid_chars)
+        return sanitized or "Sheet1"
 
     def _load_config(self) -> None:
         """Loads configuration from the config.yaml file."""
@@ -329,7 +336,7 @@ class MainModel(QObject):
         if not isinstance(config, dict) or "path_to_products_folder" not in config:
             self.show_notification.emit(
                 "error",
-                "В файле config.yaml не указан путь к папке с продукцией.",
+                "Файл config.yaml не содержит обязательных полей.",
             )
             return
 
@@ -344,6 +351,67 @@ class MainModel(QObject):
         else:
             self.show_notification.emit(
                 "error",
-                "Указанный путь к папке с продукцией не существует или не является каталогом.",
+                "Путь к папке с продуктами недоступен.",
             )
             self.is_products_folder_available = False
+    def _normalize_material_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Renames material columns to standard keys based on fuzzy matching."""
+        columns_lower = {col: str(col).lower() for col in df.columns}
+
+        def find_column(substrings: list[str]) -> str | None:
+            for col, low in columns_lower.items():
+                if all(sub in low for sub in substrings):
+                    return col
+            return None
+
+        mapping = {}
+        candidates = {
+            NOM_KEY: ["номенк"],
+            QTY_KEY: ["кол"],
+            UNIT_KEY: ["ед", "изм"],
+        }
+
+        for target, substrings in candidates.items():
+            col = find_column(substrings)
+            if col:
+                mapping[col] = target
+
+        df = df.rename(columns=mapping)
+
+        missing = [key for key in (NOM_KEY, QTY_KEY, UNIT_KEY) if key not in df.columns]
+        if missing:
+            raise ValueError(f"Usecols do not match columns, missing: {missing}, got: {list(df.columns)}")
+
+        return df
+
+    def _normalize_material_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Renames material columns to standard keys based on fuzzy matching (clean override)."""
+        columns_lower = {col: str(col).lower() for col in df.columns}
+
+        def find_column(substrings: list[str]) -> str | None:
+            for col, low in columns_lower.items():
+                if all(sub in low for sub in substrings):
+                    return col
+            return None
+
+        mapping = {}
+        candidates = {
+            NOM_KEY: ["номенк"],
+            QTY_KEY: ["кол"],
+            UNIT_KEY: ["ед", "изм"],
+        }
+
+        for target, substrings in candidates.items():
+            col = find_column(substrings)
+            if col:
+                mapping[col] = target
+
+        df = df.rename(columns=mapping)
+
+        missing = [key for key in (NOM_KEY, QTY_KEY, UNIT_KEY) if key not in df.columns]
+        if missing:
+            raise ValueError(
+                f"Usecols do not match columns, missing: {missing}, got: {list(df.columns)}"
+            )
+
+        return df

@@ -145,8 +145,20 @@ class DocumentModel(QObject):
             self.show_notification.emit("error", "Файл config.yaml не найден.")
             return
         
-        # Load templates fodler path
-        self.templates_folder_path = config.get("templates_folder_path")
+        # Load templates folder path with fallback to local ./templates
+        configured_templates = config.get("templates_folder_path")
+        if configured_templates and os.path.isdir(configured_templates):
+            self.templates_folder_path = configured_templates
+        else:
+            local_templates = os.path.join(os.getcwd(), "templates")
+            if os.path.isdir(local_templates):
+                self.templates_folder_path = local_templates
+            else:
+                self.templates_folder_path = ""
+                self.show_notification.emit(
+                    "error",
+                    "Путь к папке templates не найден. Укажите templates_folder_path в config.yaml.",
+                )
 
         # Load signatures
         self.signature_from_human = config.get("signature_from_human", [])
@@ -261,8 +273,21 @@ class DocumentModel(QObject):
         Returns:
             The updated progress bar value.
         """
+        if not self.templates_folder_path:
+            self.show_notification.emit(
+                "error",
+                "Путь к шаблонам не задан. Укажите templates_folder_path в config.yaml.",
+            )
+            return progress_bar_value
+
         try:
             table_template_path = os.path.join(self.templates_folder_path, "table.xlsx")
+            if not os.path.exists(table_template_path):
+                self.show_notification.emit(
+                    "error",
+                    f"Файл шаблона не найден: {table_template_path}",
+                )
+                return progress_bar_value
             template_wb = load_workbook(table_template_path)
             template_sheet = template_wb.active
             progress_bar_value += self.progress_bar_export_excel_step_size
@@ -361,6 +386,12 @@ class DocumentModel(QObject):
         save_folder_path: str,
     ) -> None:
         """Orchestrates the Excel export process for a given document type."""
+        if not self.templates_folder_path:
+            self.show_notification.emit(
+                "error",
+                "Путь к шаблонам не задан. Укажите templates_folder_path в config.yaml.",
+            )
+            return
         context = {
             "outgoing_number": self.outgoing_number,
             "current_date": self.current_date,
@@ -386,6 +417,13 @@ class DocumentModel(QObject):
                 materials_list = self._get_bid_materials_list()
             else:
                 return  # Should not happen
+
+            if not os.path.exists(template_path):
+                self.show_notification.emit(
+                    "error",
+                    f"???? ??????? ?? ??????: {template_path}",
+                )
+                return
 
             save_path = Path(save_folder_path) / save_filename
             progress_text = f"Экспорт в {save_filename}..."
